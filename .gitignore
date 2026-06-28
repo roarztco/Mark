@@ -3,6 +3,7 @@ dist/
 .npm-cache/
 qa/
 reference/
+.vercel/
 
 .env
 .env.*
