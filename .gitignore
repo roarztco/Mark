@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.npm-cache/
+qa/
+reference/
+
+.env
+.env.*
+!.env.example
+
+*.log
+*.local
