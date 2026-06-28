@@ -38,3 +38,17 @@ Set these variables in local `.env.local` and in the Vercel project:
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
+
+## Deployment
+
+Production is deployed on Vercel:
+
+- App: https://mark-gray.vercel.app
+- Vercel project: `roarztechs-projects/mark`
+- GitHub repo: `roarztech/Mark`
+
+Supabase Auth should allow the production domain:
+
+- Site URL: `https://mark-gray.vercel.app`
+- Redirect URL: `https://mark-gray.vercel.app/#/app`
+- Redirect URL wildcard: `https://mark-gray.vercel.app/**`
