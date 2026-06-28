@@ -27,3 +27,12 @@ The web app runs locally at `http://127.0.0.1:5173/`.
 ```bash
 npm run build
 ```
+
+## Environment
+
+Set these variables in local `.env.local` and in the Vercel project:
+
+```bash
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+```
