@@ -30,6 +30,8 @@ npm run build
 
 ## Environment
 
+TRY IT.
+
 Set these variables in local `.env.local` and in the Vercel project:
 
 ```bash
