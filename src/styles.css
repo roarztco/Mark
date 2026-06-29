@@ -22,6 +22,9 @@
   --orange: #fb6514;
   --red: #f04438;
   --slate: #667085;
+  --donut-empty: #e4e7ec;
+  --donut-meeting: #98a2b3;
+  --donut-breaks: #d0d5dd;
   --shadow: 0 14px 40px rgba(16, 24, 40, 0.08);
   --radius: 8px;
   --radius-lg: 12px;
@@ -92,6 +95,9 @@ textarea:focus-visible {
   --faint: #71809a;
   --border: #263247;
   --border-strong: #344258;
+  --donut-empty: #273246;
+  --donut-meeting: #7f8da3;
+  --donut-breaks: #3a4658;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.36);
   background: var(--bg);
   color: var(--text);
@@ -123,7 +129,7 @@ textarea:focus-visible {
   background: #182235;
 }
 
-.darkTheme :is(.calendarDayLane, .calendarAllDay div) {
+.darkTheme .calendarDayLane {
   border-color: var(--border);
   background:
     repeating-linear-gradient(
@@ -133,6 +139,13 @@ textarea:focus-visible {
       #263247 calc((100% / 13) - 1px),
       #263247 calc(100% / 13)
     ),
+    #101827;
+}
+
+.darkTheme .calendarAllDay div {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012)),
     #101827;
 }
 
@@ -2792,7 +2805,7 @@ textarea:focus-visible {
 
 .plannerBoard {
   display: grid;
-  grid-template-columns: 240px minmax(360px, 1fr) 330px;
+  grid-template-columns: minmax(210px, 0.72fr) minmax(430px, 1.55fr) minmax(250px, 0.88fr);
   min-height: 545px;
   overflow: hidden;
 }
@@ -2918,9 +2931,9 @@ textarea:focus-visible {
 
 .timelineHeader {
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   min-height: 64px;
-  padding: 11px 14px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2928,7 +2941,7 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 136px;
+  min-width: 124px;
 }
 
 .dayControls > button {
@@ -2945,14 +2958,14 @@ textarea:focus-visible {
 .timelineHeader h2 {
   margin: 0 0 4px;
   color: #1d2939;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 790;
 }
 
 .timelineHeader p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .viewSwitch {
@@ -3333,6 +3346,10 @@ textarea:focus-visible {
   text-align: left;
 }
 
+.focusProgress .progressTrack {
+  height: 6px;
+}
+
 .reminderList,
 .checkInList {
   display: grid;
@@ -3499,7 +3516,7 @@ textarea:focus-visible {
   width: 80px;
   height: 80px;
   border-radius: 999px;
-  background: conic-gradient(#e4e7ec 0 100%);
+  background: conic-gradient(var(--donut-empty) 0 100%);
   box-shadow: inset 0 0 0 18px #fff;
 }
 
@@ -3536,11 +3553,11 @@ textarea:focus-visible {
 }
 
 .legend.slate {
-  background: #98a2b3;
+  background: var(--donut-meeting);
 }
 
 .legend.pale {
-  background: #d0d5dd;
+  background: var(--donut-breaks);
 }
 
 .pageStack {
@@ -3677,7 +3694,7 @@ textarea:focus-visible {
   height: 82px;
   place-items: center;
   border-radius: 999px;
-  background: conic-gradient(var(--blue) var(--task-progress), #e6edf8 0);
+  background: conic-gradient(var(--blue) var(--task-progress), var(--donut-empty) 0);
 }
 
 .taskProgressDial::before {
@@ -6504,6 +6521,9 @@ html[data-theme="dark"] body {
   --orange: #ff9f6e;
   --red: #ff6f86;
   --slate: #93a1b5;
+  --donut-empty: #273246;
+  --donut-meeting: #7f8da3;
+  --donut-breaks: #3a4658;
   --shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
   background:
     linear-gradient(180deg, rgba(39, 53, 78, 0.48) 0%, rgba(8, 10, 15, 0) 280px),
@@ -6711,6 +6731,27 @@ html[data-theme="dark"] body {
   border-color: var(--border);
 }
 
+.darkTheme .timelineHeader {
+  border-bottom-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.01)),
+    #101722;
+}
+
+.darkTheme .timelineHeader h2 {
+  color: var(--text);
+}
+
+.darkTheme .timelineHeader p {
+  color: #b7c4d8;
+}
+
+.darkTheme .dayControls > button {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: #0c111a;
+  color: #dce7f7;
+}
+
 .darkTheme .analyticsStrip {
   overflow: hidden;
 }
@@ -6838,6 +6879,27 @@ html[data-theme="dark"] body {
   text-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
+.darkTheme .focusPanel {
+  background:
+    linear-gradient(180deg, rgba(110, 168, 255, 0.055), rgba(255, 255, 255, 0.014)),
+    var(--surface);
+}
+
+.darkTheme .focusPanel .panelHeader span,
+.darkTheme .focusPanel .panelHeader svg {
+  color: #c7d3e4;
+}
+
+.darkTheme .focusPanel .timer {
+  color: #f8fbff;
+  font-size: 34px;
+  text-shadow: 0 10px 26px rgba(0, 0, 0, 0.34);
+}
+
+.darkTheme .focusPanel p {
+  color: #b7c4d8;
+}
+
 .darkTheme .focusTimerReadout span,
 .darkTheme .focusTimeTarget span,
 .darkTheme .focusPresetGrid span,
@@ -6855,17 +6917,20 @@ html[data-theme="dark"] body {
 }
 
 .darkTheme .timerButton {
-  background: linear-gradient(180deg, #73a7ff, #366ff5);
+  border: 1px solid rgba(110, 168, 255, 0.36);
+  background:
+    radial-gradient(circle at 32% 24%, rgba(166, 197, 255, 0.26), rgba(86, 130, 255, 0.08) 42%, transparent 68%),
+    linear-gradient(180deg, #3d73ee, #244fbf);
   color: #fff;
   box-shadow:
-    inset 0 0 0 8px rgba(255, 255, 255, 0.12),
-    0 16px 34px rgba(54, 111, 245, 0.26);
+    inset 0 0 0 7px rgba(255, 255, 255, 0.075),
+    0 12px 26px rgba(36, 79, 191, 0.24);
 }
 
 .darkTheme .stopButton {
-  border-color: var(--border);
-  background: var(--surface-inset);
-  color: var(--muted);
+  border-color: rgba(148, 163, 184, 0.2);
+  background: #0d1421;
+  color: #aab8ca;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
 }
 
@@ -6876,7 +6941,11 @@ html[data-theme="dark"] body {
 }
 
 .darkTheme .focusProgress {
-  color: var(--muted);
+  color: #c7d3e4;
+}
+
+.darkTheme .focusProgress .progressTrack {
+  background: rgba(148, 163, 184, 0.18);
 }
 
 .darkTheme .livePill {
@@ -6902,6 +6971,18 @@ html[data-theme="dark"] body {
   background: var(--surface-inset);
 }
 
+.darkTheme .calendarAllDay {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0.01)),
+    #0f1624;
+}
+
+.darkTheme .calendarAllDay > span {
+  border-right-color: var(--border);
+  background: #0b111b;
+  color: #b6c2d4;
+}
+
 .darkTheme .calendarBoardHeader button {
   border-right-color: var(--border);
 }
@@ -6921,11 +7002,19 @@ html[data-theme="dark"] body {
 }
 
 .darkTheme .calendarBoardHeader button.today strong {
-  background: linear-gradient(180deg, #79acff, #3e75f4);
+  background: linear-gradient(180deg, rgba(110, 168, 255, 0.92), rgba(58, 111, 245, 0.78));
   color: #fff;
+  box-shadow: 0 8px 18px rgba(58, 111, 245, 0.2);
 }
 
-.darkTheme :is(.calendarDayLane, .calendarAllDay div) {
+.darkTheme .calendarAllDay div {
+  border-color: rgba(148, 163, 184, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0.01)),
+    #0f1624;
+}
+
+.darkTheme .calendarDayLane {
   border-color: var(--border);
   background:
     repeating-linear-gradient(
@@ -7074,7 +7163,31 @@ html[data-theme="dark"] body {
 }
 
 .darkTheme .donut {
-  box-shadow: inset 0 0 0 18px var(--surface-inset);
+  background-color: var(--surface-inset);
+  box-shadow:
+    inset 0 0 0 18px var(--surface-inset),
+    0 0 0 1px rgba(148, 163, 184, 0.16);
+}
+
+.darkTheme .taskProgressDial {
+  background: conic-gradient(var(--blue) var(--task-progress), var(--donut-empty) 0);
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
+.darkTheme .taskProgressDial::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    var(--surface);
+}
+
+.darkTheme .taskProgressDial strong,
+.darkTheme .taskHeroProgress dd {
+  color: #f7f9ff;
+}
+
+.darkTheme .taskProgressDial span,
+.darkTheme .taskHeroProgress dt {
+  color: var(--muted);
 }
 
 .darkTheme .timeLabels {

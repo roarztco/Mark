@@ -1013,13 +1013,13 @@ function buildTimeDistribution(tasks) {
 }
 
 function getDonutBackground(distribution) {
-  if (!distribution.total) return "conic-gradient(#e4e7ec 0 100%)";
+  if (!distribution.total) return "conic-gradient(var(--donut-empty) 0 100%)";
   let cursor = 0;
   const colorByKey = {
     deep: "var(--blue)",
-    meetings: "#98a2b3",
+    meetings: "var(--donut-meeting)",
     shallow: "var(--green)",
-    breaks: "#d0d5dd",
+    breaks: "var(--donut-breaks)",
   };
   const stops = distribution.items.map((item) => {
     const start = cursor;
