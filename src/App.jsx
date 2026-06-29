@@ -302,6 +302,32 @@ const linkedAreaOptions = [
 
 const checkInFocusOptions = ["30m", "1h", "2h", "3h", "4h+"];
 const checkInEnergyOptions = ["Low", "Steady", "High"];
+const focusTimerPresets = [
+  {
+    id: "pomodoro",
+    label: "Pomodoro",
+    minutes: 25,
+    detail: "25 min focus, 5 min reset",
+  },
+  {
+    id: "sprint",
+    label: "Quick sprint",
+    minutes: 15,
+    detail: "Clear one small task",
+  },
+  {
+    id: "flow52",
+    label: "52/17 flow",
+    minutes: 52,
+    detail: "Longer work, real break",
+  },
+  {
+    id: "deep",
+    label: "Deep work",
+    minutes: 90,
+    detail: "Protect a serious block",
+  },
+];
 
 function getGoalIcon(goal) {
   return goalIconMap[goal.iconKey] ?? Goal;
@@ -432,6 +458,15 @@ function dateFromKey(dateKey) {
 
 function formatTaskDate(task) {
   return task.dateKey ? monthDayFormatter.format(dateFromKey(task.dateKey)) : "Unscheduled";
+}
+
+function getTaskDate(task) {
+  return task.dateKey ? dateFromKey(task.dateKey) : getToday();
+}
+
+function isDateInRange(date, start, end) {
+  const time = startOfDay(date).getTime();
+  return time >= startOfDay(start).getTime() && time <= startOfDay(end).getTime();
 }
 
 function getWeekDateKeyByIndex(index, anchorDate = getToday()) {
@@ -681,6 +716,8 @@ function mapSupabaseCheckIn(row, tasksById, goalsById, habitsById) {
     id: row.id,
     when,
     value: `${focus}${energy}${reflection}`,
+    checkedInAt: row.checked_in_at,
+    focusMinutes: row.focus_minutes ?? 0,
     taskId: row.task_id,
     linkedTask: task?.title ?? "",
     goalId: row.goal_id,
@@ -805,12 +842,338 @@ function formatDuration(minutes) {
   return mins ? `${hrs}h ${mins}m` : `${hrs}h`;
 }
 
+function formatTimerDisplay(totalSeconds) {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function normalizeFocusTargetMinutes(value) {
+  const numeric = Number.parseInt(value ?? focusTimerPresets[0].minutes, 10);
+  return Math.max(1, Math.min(180, Number.isFinite(numeric) ? numeric : focusTimerPresets[0].minutes));
+}
+
+function getFocusTimerMeta(focusTimer) {
+  const targetMinutes = normalizeFocusTargetMinutes(focusTimer?.targetMinutes);
+  const elapsedSeconds = Math.max(0, focusTimer?.elapsedSeconds ?? 0);
+  const targetSeconds = Math.max(60, targetMinutes * 60);
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const progress = clampPercent((elapsedSeconds / targetSeconds) * 100);
+
+  return {
+    display: formatTimerDisplay(elapsedSeconds),
+    elapsedMinutes,
+    elapsedSeconds,
+    isComplete: elapsedSeconds >= targetSeconds,
+    progress,
+    remainingMinutes: Math.max(0, targetMinutes - elapsedMinutes),
+    targetDisplay: formatTimerDisplay(targetSeconds),
+    targetMinutes,
+    targetSeconds,
+  };
+}
+
+function parseFocusMinutes(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+  const hourMatch = raw.match(/(\d+(?:\.\d+)?)\s*h/i);
+  const minuteMatch = raw.match(/(\d+)\s*m/i);
+  if (raw.endsWith("+")) return Number.parseInt(raw, 10) * 60 || 0;
+  if (hourMatch || minuteMatch) {
+    return Math.round((Number.parseFloat(hourMatch?.[1] ?? "0") * 60) + Number.parseInt(minuteMatch?.[1] ?? "0", 10));
+  }
+  const numeric = Number.parseFloat(raw);
+  return Number.isFinite(numeric) ? Math.round(numeric * 60) : 0;
+}
+
+function getCheckInDate(checkIn) {
+  if (checkIn.checkedInAt) return new Date(checkIn.checkedInAt);
+  if (checkIn.when === "Just now" || checkIn.when === "Today") return getToday();
+  if (checkIn.when === "Yesterday") return addDays(getToday(), -1);
+  const parsed = new Date(checkIn.when);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getCheckInFocusMinutes(checkIn) {
+  if (Number.isFinite(checkIn.focusMinutes)) return checkIn.focusMinutes;
+  const value = checkIn.value ?? "";
+  const hourMatch = value.match(/(\d+)\s*h/i);
+  const minuteMatch = value.match(/(\d+)\s*m/i);
+  return (Number.parseInt(hourMatch?.[1] ?? "0", 10) * 60) + Number.parseInt(minuteMatch?.[1] ?? "0", 10);
+}
+
+function isFocusCategory(category) {
+  const value = String(category ?? "").toLowerCase();
+  return value.includes("focus") || value.includes("deep") || value.includes("planning");
+}
+
+function isMeetingCategory(category) {
+  return String(category ?? "").toLowerCase().includes("meeting");
+}
+
+function clampPercent(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function formatDelta(value, suffix = "") {
+  const rounded = Math.abs(value) >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  if (!value) return { text: `0${suffix} vs last week`, tone: "neutral" };
+  return {
+    text: `${value > 0 ? "+" : "-"}${Math.abs(rounded)}${suffix} vs last week`,
+    tone: value > 0 ? "positive" : "negative",
+  };
+}
+
+function buildDailySeries(tasks, weekStart, metric) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const dateKey = getDateKey(addDays(weekStart, index));
+    const dayTasks = tasks.filter((task) => (task.dateKey ?? getDateKey(getToday())) === dateKey);
+    if (metric === "focus") {
+      return Math.min(100, Math.round(dayTasks.filter((task) => isFocusCategory(task.category)).reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0) / 3));
+    }
+    if (metric === "meetings") {
+      return Math.min(100, Math.round(dayTasks.filter((task) => isMeetingCategory(task.category)).reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0) / 3));
+    }
+    if (!dayTasks.length) return 0;
+    const completed = dayTasks.filter((task) => task.completed).length;
+    return clampPercent((completed / dayTasks.length) * 100);
+  });
+}
+
+function buildCheckInFocusSeries(checkIns, weekStart) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const dateKey = getDateKey(addDays(weekStart, index));
+    const minutes = checkIns
+      .filter((checkIn) => {
+        const date = getCheckInDate(checkIn);
+        return date ? getDateKey(date) === dateKey : false;
+      })
+      .reduce((sum, checkIn) => sum + getCheckInFocusMinutes(checkIn), 0);
+    return Math.min(100, Math.round(minutes / 3));
+  });
+}
+
+function getBestFocusWindow(tasks) {
+  const focusTasks = tasks.filter((task) => isFocusCategory(task.category));
+  if (!focusTasks.length) {
+    return {
+      label: "No focus window yet",
+      detail: "Schedule focus blocks to find your best time",
+      bars: [0, 0, 0, 0, 0, 0, 0],
+      hasData: false,
+    };
+  }
+
+  const buckets = new Map();
+  focusTasks.forEach((task) => {
+    const startHour = Math.floor(timeToMinutes(task.start) / 60);
+    const key = Math.max(6, Math.min(20, startHour));
+    buckets.set(key, (buckets.get(key) ?? 0) + minutesBetween(task.start, task.end));
+  });
+
+  const bestStart = [...buckets.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 9;
+  const bestEnd = Math.min(bestStart + 3, 23);
+  const bars = Array.from({ length: 7 }, (_, index) => {
+    const hour = 7 + index * 2;
+    return Math.min(100, Math.round(((buckets.get(hour) ?? 0) / 180) * 100));
+  });
+
+  return {
+    label: `${formatTimeFromMinutes(bestStart * 60)} - ${formatTimeFromMinutes(bestEnd * 60)}`,
+    detail: `${formatDuration(buckets.get(bestStart) ?? 0)} scheduled in this window`,
+    bars,
+    hasData: true,
+  };
+}
+
+function buildTimeDistribution(tasks) {
+  const totals = tasks.reduce(
+    (acc, task) => {
+      const minutes = minutesBetween(task.start, task.end);
+      if (isFocusCategory(task.category)) acc.deep += minutes;
+      else if (isMeetingCategory(task.category)) acc.meetings += minutes;
+      else acc.shallow += minutes;
+      acc.total += minutes;
+      return acc;
+    },
+    { deep: 0, meetings: 0, shallow: 0, breaks: 0, total: 0 },
+  );
+
+  const toPercent = (minutes) => (totals.total ? clampPercent((minutes / totals.total) * 100) : 0);
+  return {
+    total: totals.total,
+    items: [
+      { label: "Deep Work", key: "deep", className: "blue", value: toPercent(totals.deep), minutes: totals.deep },
+      { label: "Meetings", key: "meetings", className: "slate", value: toPercent(totals.meetings), minutes: totals.meetings },
+      { label: "Shallow Work", key: "shallow", className: "green", value: toPercent(totals.shallow), minutes: totals.shallow },
+      { label: "Breaks", key: "breaks", className: "pale", value: toPercent(totals.breaks), minutes: totals.breaks },
+    ],
+  };
+}
+
+function getDonutBackground(distribution) {
+  if (!distribution.total) return "conic-gradient(#e4e7ec 0 100%)";
+  let cursor = 0;
+  const colorByKey = {
+    deep: "var(--blue)",
+    meetings: "#98a2b3",
+    shallow: "var(--green)",
+    breaks: "#d0d5dd",
+  };
+  const stops = distribution.items.map((item) => {
+    const start = cursor;
+    cursor += item.value;
+    return `${colorByKey[item.key]} ${start}% ${cursor}%`;
+  });
+  return `conic-gradient(${stops.join(", ")})`;
+}
+
+function buildWeeklyInsight(analytics) {
+  if (!analytics.hasActivity) {
+    return {
+      title: "Ready when you are",
+      body: "Add a task, complete work, or log a check-in and Mark will build your weekly insight from real activity.",
+      kicker: "No activity yet",
+    };
+  }
+
+  if (analytics.completion >= 80 && analytics.focusMinutes > 0) {
+    return {
+      title: "Strong delivery week",
+      body: `${analytics.completion}% task completion with ${analytics.focusHours} focus hours. Keep protecting the blocks that are working.`,
+      kicker: "High momentum",
+    };
+  }
+
+  if (analytics.focusMinutes > 0 && analytics.completion < 50) {
+    return {
+      title: "Focus is building",
+      body: `${analytics.focusHours} focus hours are scheduled, but completion is ${analytics.completion}%. Close or reschedule open tasks to clean the week.`,
+      kicker: "Needs closure",
+    };
+  }
+
+  if (analytics.checkInCount > 0) {
+    return {
+      title: "Reflection signal found",
+      body: `${analytics.checkInCount} check-in${analytics.checkInCount === 1 ? "" : "s"} captured. Link them to goals or tasks to make the analytics sharper.`,
+      kicker: "Check-ins active",
+    };
+  }
+
+  return {
+    title: "Plan the next block",
+    body: `${analytics.tasksTotal} task${analytics.tasksTotal === 1 ? "" : "s"} scheduled this week. Complete the first one to start the productivity trend.`,
+    kicker: "Work planned",
+  };
+}
+
+function calculateProductivityScore({ completion, focusMinutes, habitCompletion, goalAverage, checkInCount, hasActivity }) {
+  if (!hasActivity) return 0;
+  const focusScore = clampPercent((focusMinutes / (20 * 60)) * 100);
+  const checkInScore = clampPercent((checkInCount / 5) * 100);
+  return clampPercent(completion * 0.35 + focusScore * 0.25 + habitCompletion * 0.2 + goalAverage * 0.15 + checkInScore * 0.05);
+}
+
+function buildWorkspaceAnalytics(tasks, habits, goals, checkIns) {
+  const weekStart = startOfWeek(getToday());
+  const weekEnd = addDays(weekStart, 6);
+  const previousWeekStart = addDays(weekStart, -7);
+  const previousWeekEnd = addDays(weekStart, -1);
+  const currentWeekTasks = tasks.filter((task) => isDateInRange(getTaskDate(task), weekStart, weekEnd));
+  const previousWeekTasks = tasks.filter((task) => isDateInRange(getTaskDate(task), previousWeekStart, previousWeekEnd));
+  const currentCheckIns = checkIns.filter((checkIn) => {
+    const date = getCheckInDate(checkIn);
+    return date ? isDateInRange(date, weekStart, weekEnd) : false;
+  });
+  const completedTasks = currentWeekTasks.filter((task) => task.completed).length;
+  const previousCompletedTasks = previousWeekTasks.filter((task) => task.completed).length;
+  const completion = currentWeekTasks.length ? clampPercent((completedTasks / currentWeekTasks.length) * 100) : 0;
+  const previousCompletion = previousWeekTasks.length ? clampPercent((previousCompletedTasks / previousWeekTasks.length) * 100) : 0;
+  const scheduledFocusMinutes = currentWeekTasks.filter((task) => isFocusCategory(task.category)).reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0);
+  const previousFocusMinutes = previousWeekTasks.filter((task) => isFocusCategory(task.category)).reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0);
+  const loggedFocusMinutes = currentCheckIns.reduce((sum, checkIn) => sum + getCheckInFocusMinutes(checkIn), 0);
+  const focusMinutes = scheduledFocusMinutes + loggedFocusMinutes;
+  const habitChecks = habits.reduce((sum, habit) => sum + habit.checks.length, 0);
+  const completedHabitChecks = habits.reduce((sum, habit) => sum + habit.checks.filter(Boolean).length, 0);
+  const habitCompletion = habitChecks ? clampPercent((completedHabitChecks / habitChecks) * 100) : 0;
+  const goalAverage = goals.length ? clampPercent(goals.reduce((sum, goal) => sum + (goal.progress ?? 0), 0) / goals.length) : 0;
+  const hasActivity = Boolean(currentWeekTasks.length || habits.length || goals.length || currentCheckIns.length || focusMinutes);
+  const score = calculateProductivityScore({
+    completion,
+    focusMinutes,
+    habitCompletion,
+    goalAverage,
+    checkInCount: currentCheckIns.length,
+    hasActivity,
+  });
+  const previousScore = calculateProductivityScore({
+    completion: previousCompletion,
+    focusMinutes: previousFocusMinutes,
+    habitCompletion: 0,
+    goalAverage: 0,
+    checkInCount: 0,
+    hasActivity: Boolean(previousWeekTasks.length || previousFocusMinutes),
+  });
+  const distribution = buildTimeDistribution(currentWeekTasks);
+  const bestFocusWindow = getBestFocusWindow(currentWeekTasks);
+  const scoreDelta = formatDelta(score - previousScore);
+  const focusDelta = formatDelta((focusMinutes - previousFocusMinutes) / 60, " hrs");
+  const completionDelta = formatDelta(completion - previousCompletion, "%");
+  const scheduledFocusTrend = buildDailySeries(currentWeekTasks, weekStart, "focus");
+  const checkInFocusTrend = buildCheckInFocusSeries(currentCheckIns, weekStart);
+  const focusTrend = scheduledFocusTrend.map((value, index) => Math.min(100, value + checkInFocusTrend[index]));
+  const completionTrend = buildDailySeries(currentWeekTasks, weekStart, "completion");
+  const scoreTrend = completionTrend.map((value, index) => clampPercent(value * 0.65 + focusTrend[index] * 0.35));
+  const meetingTrend = buildDailySeries(currentWeekTasks, weekStart, "meetings");
+
+  const analytics = {
+    hasActivity,
+    score,
+    completion,
+    focusMinutes,
+    focusHours: (focusMinutes / 60).toFixed(1),
+    habitCompletion,
+    goalAverage,
+    checkInCount: currentCheckIns.length,
+    tasksTotal: currentWeekTasks.length,
+    tasksCompleted: completedTasks,
+    meetingMinutes: currentWeekTasks.filter((task) => isMeetingCategory(task.category)).reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0),
+    scoreDelta,
+    focusDelta,
+    completionDelta,
+    scoreTrend,
+    focusTrend,
+    completionTrend,
+    meetingTrend,
+    bestFocusWindow,
+    distribution,
+  };
+
+  return {
+    ...analytics,
+    weeklyInsight: buildWeeklyInsight(analytics),
+  };
+}
+
 function AppLogo() {
   return (
     <div className="brand" aria-label="Mark productivity web app">
       <div className="brandMark">M</div>
       <span>Mark</span>
     </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="googleIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6.5c-.3 1.4-1.1 2.6-2.3 3.4v2.8h3.7c2.2-2 3.6-4.9 3.6-8.2Z" />
+      <path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8l-3.7-2.8c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v2.9C3.7 21.4 7.5 24 12 24Z" />
+      <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.6.4-2.3V7.3H1.8C1 8.9.5 10.7.5 12.5s.5 3.6 1.3 5.2l3.8-2.9Z" />
+      <path fill="#EA4335" d="M12 5.5c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 2.1 15.1 1 12 1 7.5 1 3.7 3.6 1.8 7.3l3.8 2.9c.9-2.7 3.4-4.7 6.4-4.7Z" />
+    </svg>
   );
 }
 
@@ -1151,8 +1514,9 @@ function AuthPage({ mode, onNavigate }) {
             <ArrowRight size={17} />
           </button>
         </form>
-        <button type="button" className="authProviderButton" onClick={submitGoogleAuth} disabled={isSubmitting}>
-          Continue with Google
+        <button type="button" className="authProviderButton" onClick={submitGoogleAuth} disabled={isSubmitting} aria-label="Sign in with Google">
+          <span>Sign in with</span>
+          <GoogleIcon />
         </button>
         {authError ? <p className="authMessage error">{authError}</p> : null}
         {authNotice ? <p className="authMessage">{authNotice}</p> : null}
@@ -1266,7 +1630,7 @@ function ProgressBar({ value, color = "blue" }) {
   );
 }
 
-function MetricCard({ title, value, suffix, delta, children }) {
+function MetricCard({ title, value, suffix, delta, deltaTone = "positive", children }) {
   return (
     <section className="metricCard" aria-label={title}>
       <div>
@@ -1275,7 +1639,7 @@ function MetricCard({ title, value, suffix, delta, children }) {
           {value}
           {suffix && <span>{suffix}</span>}
         </strong>
-        <small>{delta}</small>
+        <small className={`metricDelta ${deltaTone}`}>{delta}</small>
       </div>
       {children}
     </section>
@@ -1633,30 +1997,29 @@ function Header({ activeNav, setActiveNav, tasks, goals, reminders, onAddTask, t
   );
 }
 
-function AnalyticsStrip({ completion, focusMinutes }) {
-  const focusHours = (focusMinutes / 60).toFixed(1);
-
+function AnalyticsStrip({ stats }) {
   return (
     <section className="analyticsStrip" aria-label="Weekly productivity insights">
-      <MetricCard title="Productivity Score" value="84" suffix="/100" delta="+12 vs last week">
-        <Sparkline values={[36, 48, 55, 61, 76, 68, 81]} />
+      <MetricCard title="Productivity Score" value={stats.score} suffix="/100" delta={stats.scoreDelta.text} deltaTone={stats.scoreDelta.tone}>
+        <Sparkline values={stats.scoreTrend} />
       </MetricCard>
-      <MetricCard title="Focus Hours" value={focusHours} suffix=" hrs" delta="+3.4 hrs vs last week">
-        <Sparkline values={[31, 42, 48, 63, 70, 88, 78]} />
+      <MetricCard title="Focus Hours" value={stats.focusHours} suffix=" hrs" delta={stats.focusDelta.text} deltaTone={stats.focusDelta.tone}>
+        <Sparkline values={stats.focusTrend} />
       </MetricCard>
-      <MetricCard title="Task Completion" value={completion} suffix="%" delta="+8% vs last week">
-        <Sparkline values={[40, 54, 58, 72, 66, 84, 76]} color="green" />
+      <MetricCard title="Task Completion" value={stats.completion} suffix="%" delta={stats.completionDelta.text} deltaTone={stats.completionDelta.tone}>
+        <Sparkline values={stats.completionTrend} color="green" />
       </MetricCard>
-      <MetricCard title="Best Focus Window" value="9:00 AM - 12:00 PM" delta="Your highest-focus time">
-        <MiniBars values={[18, 31, 45, 63, 72, 85, 66]} color="slate" />
+      <MetricCard title="Best Focus Window" value={stats.bestFocusWindow.label} delta={stats.bestFocusWindow.detail} deltaTone={stats.bestFocusWindow.hasData ? "positive" : "neutral"}>
+        <MiniBars values={stats.bestFocusWindow.bars} color="slate" />
       </MetricCard>
       <section className="weeklyInsight">
         <span>
           <Sparkles size={18} />
         </span>
         <div>
-          <h2>Weekly Insight</h2>
-          <p>Great week. You focused more consistently and completed 18% more high-priority work.</p>
+          <small>{stats.weeklyInsight.kicker}</small>
+          <h2>{stats.weeklyInsight.title}</h2>
+          <p>{stats.weeklyInsight.body}</p>
         </div>
       </section>
     </section>
@@ -2016,30 +2379,9 @@ function PlannerBoard({ tasks, inbox, selectedTaskId, setSelectedTaskId, setTask
   );
 }
 
-function FocusRail({ reminders, setReminders, checkIns, setCheckIns }) {
-  const [running, setRunning] = useState(false);
-  const [seconds, setSeconds] = useState(45 * 60 + 12);
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [running]);
-
-  const minutes = Math.floor(seconds / 60);
-  const display = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-
-  const endSession = () => {
-    setRunning(false);
-    setCheckIns((current) => [
-      {
-        id: Date.now(),
-        when: "Just now",
-        value: `${Math.floor(minutes / 60)}h ${minutes % 60}m focused`,
-      },
-      ...current,
-    ]);
-  };
+function FocusRail({ reminders, setReminders, checkIns, focusTimer, onToggleFocusTimer, onResetFocusTimer, onEndFocusSession }) {
+  const timerMeta = getFocusTimerMeta(focusTimer);
+  const isRunning = Boolean(focusTimer?.running);
 
   return (
     <aside className="rightRail">
@@ -2048,21 +2390,21 @@ function FocusRail({ reminders, setReminders, checkIns, setCheckIns }) {
           <span>Focus</span>
           <MoreHorizontal size={17} />
         </div>
-        <strong className="timer">{display}</strong>
-        <p>Deep Work Session</p>
+        <strong className="timer">{timerMeta.display}</strong>
+        <p>{isRunning ? `Running to ${timerMeta.targetDisplay}` : timerMeta.isComplete ? "Session complete" : "Ready for focus"}</p>
         <div className="focusControls">
-          <button className="timerButton" type="button" onClick={() => setRunning((value) => !value)} aria-label={running ? "Pause focus timer" : "Start focus timer"}>
-            {running ? <Pause size={20} /> : <Play size={20} />}
+          <button className="timerButton" type="button" onClick={onToggleFocusTimer} disabled={timerMeta.isComplete} aria-label={isRunning ? "Pause focus timer" : "Start focus timer"}>
+            {isRunning ? <Pause size={20} /> : <Play size={20} />}
           </button>
-          <button className="stopButton" type="button" onClick={endSession} aria-label="End focus session">
+          <button className="stopButton" type="button" onClick={onResetFocusTimer} aria-label="Reset focus timer">
             <Square size={17} />
           </button>
         </div>
         <div className="focusProgress">
-          <span>Today: 3h 20m / 4h goal</span>
-          <ProgressBar value={83} color="blue" />
+          <span>{timerMeta.isComplete ? "Session finished. Save it as a check-in." : `${timerMeta.progress}% complete - ${formatDuration(timerMeta.remainingMinutes)} remaining`}</span>
+          <ProgressBar value={timerMeta.progress} color="blue" />
         </div>
-        <button className="secondaryButton full" type="button" onClick={endSession}>
+        <button className="secondaryButton full" type="button" onClick={onEndFocusSession} disabled={!timerMeta.elapsedSeconds}>
           <CheckCircle2 size={17} />
           End Session & Check-in
         </button>
@@ -2146,32 +2488,37 @@ function FocusRail({ reminders, setReminders, checkIns, setCheckIns }) {
   );
 }
 
-function WeeklyGlance({ completion, focusMinutes }) {
+function WeeklyGlance({ stats }) {
+  const donutBackground = getDonutBackground(stats.distribution);
+
   return (
     <section className="weeklyGlance" aria-label="This week at a glance">
       <div className="weeklyMetric lead">
         <h2>This Week at a Glance</h2>
         <p>Focus Hours</p>
-        <strong>{(focusMinutes / 60).toFixed(1)} hrs</strong>
-        <MiniBars values={[54, 68, 61, 78, 82, 42, 31]} />
+        <strong>{stats.focusHours} hrs</strong>
+        <MiniBars values={stats.focusTrend} />
       </div>
       <div className="weeklyMetric">
         <p>Task Completion</p>
-        <strong>{completion}%</strong>
-        <MiniBars values={[62, 70, 66, 80, 74, 48, 38]} color="green" />
+        <strong>{stats.completion}%</strong>
+        <MiniBars values={stats.completionTrend} color="green" />
       </div>
       <div className="weeklyMetric">
         <p>Meetings</p>
-        <strong>7.5 hrs</strong>
-        <MiniBars values={[25, 38, 54, 45, 31, 20, 12]} color="slate" />
+        <strong>{(stats.meetingMinutes / 60).toFixed(1)} hrs</strong>
+        <MiniBars values={stats.meetingTrend} color="slate" />
       </div>
       <div className="donutPanel">
-        <div className="donut" aria-hidden="true" />
+        <div className="donut" style={{ background: donutBackground }} aria-hidden="true" />
         <ul>
-          <li><span className="legend blue" />Deep Work <b>60%</b></li>
-          <li><span className="legend slate" />Meetings <b>20%</b></li>
-          <li><span className="legend green" />Shallow Work <b>15%</b></li>
-          <li><span className="legend pale" />Breaks <b>5%</b></li>
+          {stats.distribution.items.map((item) => (
+            <li key={item.key}>
+              <span className={`legend ${item.className}`} />
+              {item.label}
+              <b>{item.value}%</b>
+            </li>
+          ))}
         </ul>
       </div>
     </section>
@@ -2591,16 +2938,19 @@ function OverviewView({
   reminders,
   setReminders,
   checkIns,
-  setCheckIns,
   selectedTaskId,
   setSelectedTaskId,
   setTasks,
   onAddTask,
   stats,
+  focusTimer,
+  onToggleFocusTimer,
+  onResetFocusTimer,
+  onEndFocusSession,
 }) {
   return (
     <>
-      <AnalyticsStrip completion={stats.completion} focusMinutes={stats.focusMinutes} />
+      <AnalyticsStrip stats={stats} />
       <GoalsProgress goals={goals} />
       <ProductLoopPanel tasks={tasks} goals={goals} habits={habits} checkIns={checkIns} stats={stats} />
       <div className="workspaceGrid">
@@ -2613,13 +2963,16 @@ function OverviewView({
             setTasks={setTasks}
             onAddTask={onAddTask}
           />
-          <WeeklyGlance completion={stats.completion} focusMinutes={stats.focusMinutes} />
+          <WeeklyGlance stats={stats} />
         </div>
         <FocusRail
           reminders={reminders}
           setReminders={setReminders}
           checkIns={checkIns}
-          setCheckIns={setCheckIns}
+          focusTimer={focusTimer}
+          onToggleFocusTimer={onToggleFocusTimer}
+          onResetFocusTimer={onResetFocusTimer}
+          onEndFocusSession={onEndFocusSession}
         />
       </div>
     </>
@@ -2991,54 +3344,68 @@ function GoalsView({ goals, tasks, habits, onAddGoal, onScheduleGoal }) {
   );
 }
 
-function FocusSessionPanel({ setCheckIns }) {
-  const [running, setRunning] = useState(false);
-  const [seconds, setSeconds] = useState(25 * 60);
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
-    return () => window.clearInterval(timer);
-  }, [running]);
-
-  const minutes = Math.floor(seconds / 60);
-  const display = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-
-  const endSession = () => {
-    setRunning(false);
-    setCheckIns((current) => [
-      {
-        id: Date.now(),
-        when: "Just now",
-        value: `${Math.floor(minutes / 60)}h ${minutes % 60}m focused`,
-      },
-      ...current,
-    ]);
-  };
+function FocusSessionPanel({ focusTimer, onToggleFocusTimer, onResetFocusTimer, onSetFocusTargetMinutes, onSelectFocusPreset, onEndFocusSession }) {
+  const timerMeta = getFocusTimerMeta(focusTimer);
+  const isRunning = Boolean(focusTimer?.running);
 
   return (
     <section className="focusConsole">
       <div className="panelHeader">
         <div>
           <span className="eyebrow">Current session</span>
-          <h2>Deep Work Session</h2>
+          <h2>Focus timer</h2>
         </div>
-        <span className="livePill">{running ? "Running" : "Ready"}</span>
+        <span className={`livePill ${timerMeta.isComplete ? "done" : isRunning ? "running" : ""}`}>{timerMeta.isComplete ? "Complete" : isRunning ? "Running" : "Ready"}</span>
       </div>
-      <strong className="focusConsoleTimer">{display}</strong>
+      <div className="focusTimerReadout" aria-live="polite">
+        <strong className="focusConsoleTimer">{timerMeta.display}</strong>
+        <span>of {timerMeta.targetDisplay}</span>
+      </div>
+      <div className="focusTimeTarget">
+        <label htmlFor="focusTargetMinutes">Session target</label>
+        <div>
+          <input
+            id="focusTargetMinutes"
+            type="number"
+            min="1"
+            max="180"
+            value={timerMeta.targetMinutes}
+            onChange={(event) => onSetFocusTargetMinutes(event.target.value)}
+          />
+          <span>minutes</span>
+        </div>
+      </div>
+      <div className="focusTimerTrack" aria-label={`${timerMeta.progress}% of focus session complete`}>
+        <span style={{ width: `${timerMeta.progress}%` }} />
+      </div>
+      <div className="focusPresetGrid" aria-label="Focus timer suggestions">
+        {focusTimerPresets.map((preset) => (
+          <button
+            key={preset.id}
+            className={timerMeta.targetMinutes === preset.minutes ? "active" : ""}
+            type="button"
+            aria-pressed={timerMeta.targetMinutes === preset.minutes}
+            onClick={() => onSelectFocusPreset(preset.minutes)}
+          >
+            <strong>{preset.label}</strong>
+            <span>{preset.minutes} min</span>
+            <small>{preset.detail}</small>
+          </button>
+        ))}
+      </div>
       <div className="focusConsoleControls">
-        <button className="timerButton" type="button" onClick={() => setRunning((value) => !value)} aria-label={running ? "Pause focus timer" : "Start focus timer"}>
-          {running ? <Pause size={22} /> : <Play size={22} />}
+        <button className="timerButton" type="button" onClick={onToggleFocusTimer} disabled={timerMeta.isComplete} aria-label={isRunning ? "Pause focus timer" : "Start focus timer"}>
+          {isRunning ? <Pause size={22} /> : <Play size={22} />}
         </button>
-        <button className="stopButton" type="button" onClick={endSession} aria-label="End focus session">
+        <button className="stopButton" type="button" onClick={onResetFocusTimer} aria-label="Reset focus timer">
           <Square size={17} />
         </button>
       </div>
       <div className="focusProgress">
-        <span>Today: 3h 20m / 4h goal</span>
-        <ProgressBar value={83} color="blue" />
+        <span>{timerMeta.isComplete ? "Session finished. Save it as a check-in when you are ready." : `${timerMeta.progress}% complete - ${formatDuration(timerMeta.remainingMinutes)} remaining`}</span>
+        <ProgressBar value={timerMeta.progress} color="blue" />
       </div>
-      <button className="secondaryButton full" type="button" onClick={endSession}>
+      <button className="secondaryButton full" type="button" onClick={onEndFocusSession} disabled={!timerMeta.elapsedSeconds}>
         <CheckCircle2 size={17} />
         End Session & Check-in
       </button>
@@ -3046,7 +3413,21 @@ function FocusSessionPanel({ setCheckIns }) {
   );
 }
 
-function FocusView({ tasks, reminders, setReminders, checkIns, setCheckIns, selectedTaskId, setSelectedTaskId, onToggleTask }) {
+function FocusView({
+  tasks,
+  reminders,
+  setReminders,
+  checkIns,
+  selectedTaskId,
+  setSelectedTaskId,
+  onToggleTask,
+  focusTimer,
+  onToggleFocusTimer,
+  onResetFocusTimer,
+  onSetFocusTargetMinutes,
+  onSelectFocusPreset,
+  onEndFocusSession,
+}) {
   const focusTasks = tasks.filter((task) => task.category === "Focus" || task.category === "Planning");
   const focusMinutes = focusTasks.reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0);
 
@@ -3066,7 +3447,14 @@ function FocusView({ tasks, reminders, setReminders, checkIns, setCheckIns, sele
       </section>
 
       <div className="focusLayout">
-        <FocusSessionPanel setCheckIns={setCheckIns} />
+        <FocusSessionPanel
+          focusTimer={focusTimer}
+          onToggleFocusTimer={onToggleFocusTimer}
+          onResetFocusTimer={onResetFocusTimer}
+          onSetFocusTargetMinutes={onSetFocusTargetMinutes}
+          onSelectFocusPreset={onSelectFocusPreset}
+          onEndFocusSession={onEndFocusSession}
+        />
         <section className="dashboardPanel">
           <div className="panelHeader">
             <div>
@@ -3182,8 +3570,8 @@ function AnalyticsView({ tasks, goals, habits, checkIns, stats }) {
 
   return (
     <div className="pageStack analyticsView">
-      <AnalyticsStrip completion={stats.completion} focusMinutes={stats.focusMinutes} />
-      <WeeklyGlance completion={stats.completion} focusMinutes={stats.focusMinutes} />
+      <AnalyticsStrip stats={stats} />
+      <WeeklyGlance stats={stats} />
       <section className="analyticsInsightGrid" aria-label="Productivity loop analytics">
         <article className="dashboardPanel analyticsInsight">
           <span className="goalIcon blue">
@@ -3223,9 +3611,9 @@ function AnalyticsView({ tasks, goals, habits, checkIns, stats }) {
               <span className="eyebrow">Trend</span>
               <h2>Productivity score</h2>
             </div>
-            <strong>{stats.completion}%</strong>
+            <strong>{stats.score}/100</strong>
           </div>
-          <MiniBars values={[44, 55, 61, 72, 66, Math.max(30, stats.completion - 8), stats.completion]} />
+          <MiniBars values={stats.scoreTrend} />
           <p>{recommendations[0]}</p>
         </section>
 
@@ -3261,12 +3649,15 @@ function AnalyticsView({ tasks, goals, habits, checkIns, stats }) {
             <MoreHorizontal size={17} />
           </div>
           <div className="donutPanel analyticsDonut">
-            <div className="donut" aria-hidden="true" />
+            <div className="donut" style={{ background: getDonutBackground(stats.distribution) }} aria-hidden="true" />
             <ul>
-              <li><span className="legend blue" />Deep Work <b>60%</b></li>
-              <li><span className="legend slate" />Meetings <b>20%</b></li>
-              <li><span className="legend green" />Shallow Work <b>15%</b></li>
-              <li><span className="legend pale" />Breaks <b>5%</b></li>
+              {stats.distribution.items.map((item) => (
+                <li key={item.key}>
+                  <span className={`legend ${item.className}`} />
+                  {item.label}
+                  <b>{item.value}%</b>
+                </li>
+              ))}
             </ul>
           </div>
         </section>
@@ -3322,6 +3713,8 @@ function CheckInsView({ checkIns, setCheckIns, tasks, goals, habits }) {
         id: Date.now(),
         when: "Just now",
         value: `${focusTime} focused - ${energy} energy - ${outcome}. ${blockerSummary}.`,
+        checkedInAt: new Date().toISOString(),
+        focusMinutes: parseFocusMinutes(focusTime),
         taskId: linkedTask?.id ?? null,
         linkedTask: linkedTask?.title ?? "",
         goalId: linkedGoal?.id ?? null,
@@ -3510,6 +3903,12 @@ function MainContent({
   onToggleHabit,
   theme,
   onToggleTheme,
+  focusTimer,
+  onToggleFocusTimer,
+  onResetFocusTimer,
+  onSetFocusTargetMinutes,
+  onSelectFocusPreset,
+  onEndFocusSession,
 }) {
   if (activeNav === "Calendar") {
     return (
@@ -3553,10 +3952,15 @@ function MainContent({
         reminders={reminders}
         setReminders={setReminders}
         checkIns={checkIns}
-        setCheckIns={setCheckIns}
         selectedTaskId={selectedTaskId}
         setSelectedTaskId={setSelectedTaskId}
         onToggleTask={onToggleTask}
+        focusTimer={focusTimer}
+        onToggleFocusTimer={onToggleFocusTimer}
+        onResetFocusTimer={onResetFocusTimer}
+        onSetFocusTargetMinutes={onSetFocusTargetMinutes}
+        onSelectFocusPreset={onSelectFocusPreset}
+        onEndFocusSession={onEndFocusSession}
       />
     );
   }
@@ -3582,12 +3986,15 @@ function MainContent({
       reminders={reminders}
       setReminders={setReminders}
       checkIns={checkIns}
-      setCheckIns={setCheckIns}
       selectedTaskId={selectedTaskId}
       setSelectedTaskId={setSelectedTaskId}
       setTasks={setTasks}
       onAddTask={onAddTask}
       stats={stats}
+      focusTimer={focusTimer}
+      onToggleFocusTimer={onToggleFocusTimer}
+      onResetFocusTimer={onResetFocusTimer}
+      onEndFocusSession={onEndFocusSession}
     />
   );
 }
@@ -3987,6 +4394,11 @@ export function App() {
   const [appReady, setAppReady] = useState(false);
   const [theme, setTheme] = usePersistentState("mark.theme.v1", "light");
   const [entryView, setEntryView] = useState(getRouteFromHash);
+  const [focusTimer, setFocusTimer] = useState({
+    running: false,
+    elapsedSeconds: 0,
+    targetMinutes: focusTimerPresets[0].minutes,
+  });
 
   const loadUserWorkspace = async (user) => {
     setIsWorkspaceLoading(true);
@@ -4046,12 +4458,31 @@ export function App() {
     setSelectedTaskId(null);
     setWorkspaceError("");
     setIsWorkspaceLoading(false);
+    setFocusTimer((current) => ({ ...current, running: false, elapsedSeconds: 0 }));
   };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setAppReady(true), 250);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!focusTimer.running) return undefined;
+    const timer = window.setInterval(() => {
+      setFocusTimer((current) => {
+        if (!current.running) return current;
+        const { targetSeconds } = getFocusTimerMeta(current);
+        const elapsedSeconds = Math.min(current.elapsedSeconds + 1, targetSeconds);
+        return {
+          ...current,
+          elapsedSeconds,
+          running: elapsedSeconds >= targetSeconds ? false : current.running,
+        };
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [focusTimer.running]);
 
   useEffect(() => {
     const syncRoute = () => setEntryView(getRouteFromHash());
@@ -4115,14 +4546,7 @@ export function App() {
   const areaLookup = useMemo(() => createAreaLookup(areas), [areas]);
 
   const stats = useMemo(() => {
-    const completedTasks = tasks.filter((task) => task.completed).length;
-    const completion = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
-    const focusMinutes = tasks.reduce((sum, task) => sum + (task.category === "Focus" ? minutesBetween(task.start, task.end) : 0), 0);
-    const habitChecks = habits.reduce((sum, habit) => sum + habit.checks.length, 0);
-    const completedHabitChecks = habits.reduce((sum, habit) => sum + habit.checks.filter(Boolean).length, 0);
-    const habitCompletion = habitChecks ? Math.round((completedHabitChecks / habitChecks) * 100) : 0;
-    const goalAverage = loopGoals.length ? Math.round(loopGoals.reduce((sum, goal) => sum + goal.progress, 0) / loopGoals.length) : 0;
-    return { completion, focusMinutes, habitCompletion, goalAverage, checkInCount: checkIns.length };
+    return buildWorkspaceAnalytics(tasks, habits, loopGoals, checkIns);
   }, [tasks, habits, loopGoals, checkIns]);
 
   const createTask = async (task) => {
@@ -4239,6 +4663,8 @@ export function App() {
           id: Date.now(),
           when: "Just now",
           value: `Completed ${task.title}${task.linkedGoal ? ` for ${task.linkedGoal}` : ""}`,
+          checkedInAt: new Date().toISOString(),
+          focusMinutes: 0,
           taskId: task.id,
           linkedTask: task.title,
           goalId: task.goalId ?? null,
@@ -4286,6 +4712,8 @@ export function App() {
           id: Date.now(),
           when: "Just now",
           value: `Checked ${habit.name}${linkedGoal ? ` for ${linkedGoal.label}` : ""}`,
+          checkedInAt: new Date().toISOString(),
+          focusMinutes: 0,
           habitId: habit.id,
           linkedHabit: habit.name,
           goalId: linkedGoal?.id ?? null,
@@ -4298,6 +4726,44 @@ export function App() {
 
   const toggleTheme = () => {
     setTheme((current) => (current === "dark" ? "light" : "dark"));
+  };
+
+  const toggleFocusTimer = () => {
+    setFocusTimer((current) => {
+      const { isComplete } = getFocusTimerMeta(current);
+      if (isComplete) return current;
+      return { ...current, running: !current.running };
+    });
+  };
+
+  const resetFocusTimer = () => {
+    setFocusTimer((current) => ({ ...current, running: false, elapsedSeconds: 0 }));
+  };
+
+  const setFocusTargetMinutes = (value) => {
+    setFocusTimer((current) => ({
+      ...current,
+      running: false,
+      elapsedSeconds: 0,
+      targetMinutes: normalizeFocusTargetMinutes(value),
+    }));
+  };
+
+  const endFocusSession = () => {
+    const { elapsedMinutes, elapsedSeconds } = getFocusTimerMeta(focusTimer);
+    if (!elapsedSeconds) return;
+
+    setCheckIns((current) => [
+      {
+        id: Date.now(),
+        when: "Just now",
+        value: `${formatDuration(Math.max(1, elapsedMinutes))} focused`,
+        checkedInAt: new Date().toISOString(),
+        focusMinutes: Math.max(1, elapsedMinutes),
+      },
+      ...current,
+    ]);
+    setFocusTimer((current) => ({ ...current, running: false, elapsedSeconds: 0 }));
   };
 
   const navigateEntry = (view) => {
@@ -4321,6 +4787,7 @@ export function App() {
     setOnboardingProfile(profileId);
     setSelectedTaskId(nextWorkspace.tasks[0]?.id ?? null);
     setActiveNav("Overview");
+    setFocusTimer((current) => ({ ...current, running: false, elapsedSeconds: 0 }));
     navigateEntry("app");
   };
 
@@ -4422,6 +4889,12 @@ export function App() {
           onToggleHabit={toggleHabit}
           theme={theme}
           onToggleTheme={toggleTheme}
+          focusTimer={focusTimer}
+          onToggleFocusTimer={toggleFocusTimer}
+          onResetFocusTimer={resetFocusTimer}
+          onSetFocusTargetMinutes={setFocusTargetMinutes}
+          onSelectFocusPreset={setFocusTargetMinutes}
+          onEndFocusSession={endFocusSession}
         />
       </section>
       <ScheduleDialog open={isDialogOpen} onClose={closeTaskDialog} onCreate={createTask} goals={loopGoals} habits={habits} draft={taskDraft} />

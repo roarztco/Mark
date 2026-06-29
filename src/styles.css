@@ -1237,6 +1237,7 @@ textarea:focus-visible {
   min-height: 50px;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.065);
@@ -1249,6 +1250,19 @@ textarea:focus-visible {
 .authProviderButton:hover {
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.authProviderButton span {
+  color: rgba(248, 251, 255, 0.86);
+}
+
+.googleIcon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 999px;
+  background: #fff;
 }
 
 .authMessage {
@@ -2501,7 +2515,7 @@ textarea:focus-visible {
 .metricCard:nth-child(4) strong {
   font-size: 15px;
   line-height: 1.2;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .metricCard:nth-child(4) {
@@ -2530,10 +2544,20 @@ textarea:focus-visible {
   font-weight: 690;
 }
 
-.metricCard small {
+.metricDelta {
+  display: block;
   color: #079455;
   font-size: 12px;
   font-weight: 650;
+  line-height: 1.35;
+}
+
+.metricDelta.neutral {
+  color: #667085;
+}
+
+.metricDelta.negative {
+  color: #d92d20;
 }
 
 .miniBars {
@@ -2546,9 +2570,10 @@ textarea:focus-visible {
 
 .miniBars span {
   width: 6px;
-  min-height: 10px;
+  min-height: 0;
   border-radius: 999px 999px 2px 2px;
   background: linear-gradient(180deg, #7ca3ff, var(--blue));
+  transition: height 180ms ease;
 }
 
 .miniBars.green span {
@@ -2585,9 +2610,14 @@ textarea:focus-visible {
 }
 
 .weeklyInsight {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 16px 18px 15px;
+  background:
+    linear-gradient(90deg, rgba(21, 94, 239, 0.06), rgba(21, 94, 239, 0)),
+    linear-gradient(180deg, #fbfdff, #fff);
 }
 
 .weeklyInsight > span {
@@ -2598,22 +2628,35 @@ textarea:focus-visible {
   place-items: center;
   border-radius: 999px;
   background: #eff4ff;
+  border: 1px solid #dbe6ff;
   color: var(--blue);
 }
 
+.weeklyInsight > div {
+  min-width: 0;
+}
+
 .weeklyInsight h2 {
-  margin: 0 0 7px;
+  margin: 2px 0 7px;
   color: #1d2939;
-  font-size: 14px;
-  font-weight: 780;
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.weeklyInsight small {
+  display: inline-flex;
+  margin-bottom: 2px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 760;
 }
 
 .weeklyInsight p {
-  max-width: 230px;
+  max-width: 260px;
   margin: 0;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.48;
+  line-height: 1.45;
 }
 
 .goalsProgress,
@@ -3267,6 +3310,12 @@ textarea:focus-visible {
   box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.16), 0 12px 30px rgba(21, 94, 239, 0.24);
 }
 
+.timerButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .stopButton {
   width: 42px;
   height: 42px;
@@ -3450,7 +3499,7 @@ textarea:focus-visible {
   width: 80px;
   height: 80px;
   border-radius: 999px;
-  background: conic-gradient(var(--blue) 0 60%, #a4aab8 60% 80%, var(--green) 80% 95%, #d0d5dd 95% 100%);
+  background: conic-gradient(#e4e7ec 0 100%);
   box-shadow: inset 0 0 0 18px #fff;
 }
 
@@ -5019,10 +5068,10 @@ textarea:focus-visible {
 .focusConsole {
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
   padding: 18px;
-  text-align: center;
+  text-align: left;
 }
 
 .focusConsole .panelHeader {
@@ -5041,13 +5090,139 @@ textarea:focus-visible {
   font-weight: 760;
 }
 
+.livePill.running {
+  background: #eff4ff;
+  color: var(--blue);
+}
+
+.livePill.done {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.focusTimerReadout {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid #dbe6ff;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(21, 94, 239, 0.1), transparent 34%),
+    linear-gradient(180deg, #fbfdff, #f5f8ff);
+  text-align: center;
+}
+
 .focusConsoleTimer {
   display: block;
   color: #101828;
-  font-size: 54px;
+  font-size: 52px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0;
+}
+
+.focusTimerReadout span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.focusTimeTarget {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.focusTimeTarget label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.focusTimeTarget > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.focusTimeTarget input {
+  width: 58px;
+  border: 0;
+  outline: none;
+  color: #101828;
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.focusTimeTarget span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 690;
+}
+
+.focusTimerTrack {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #eef2f7;
+}
+
+.focusTimerTrack span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #155eef, #37c894);
+  transition: width 260ms ease;
+}
+
+.focusPresetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.focusPresetGrid button {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #344054;
+  text-align: left;
+  cursor: pointer;
+}
+
+.focusPresetGrid button:hover,
+.focusPresetGrid button.active {
+  border-color: #b2c7ff;
+  background: #eff4ff;
+}
+
+.focusPresetGrid strong {
+  color: #1d2939;
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.focusPresetGrid span,
+.focusPresetGrid small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.focusPresetGrid button.active span {
+  color: var(--blue);
+  font-weight: 780;
 }
 
 .focusConsoleControls {
@@ -6214,6 +6389,11 @@ textarea:focus-visible {
     font-size: 42px;
   }
 
+  .focusTimeTarget,
+  .focusPresetGrid {
+    grid-template-columns: 1fr;
+  }
+
   .calendarToolbar {
     padding: 12px;
   }
@@ -6295,6 +6475,689 @@ textarea:focus-visible {
   .formGrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Professional dark theme polish */
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: #080a0f;
+  color: #f7f9ff;
+}
+
+.appShell.darkTheme {
+  --bg: #080a0f;
+  --surface: #111722;
+  --surface-soft: #151d2a;
+  --surface-blue: rgba(91, 140, 255, 0.16);
+  --surface-raised: #192233;
+  --surface-inset: #0c111a;
+  --text: #f7f9ff;
+  --muted: #a8b3c5;
+  --faint: #6f7d92;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(171, 186, 207, 0.28);
+  --blue: #6ea8ff;
+  --blue-2: #8bb8ff;
+  --green: #37d99e;
+  --amber: #f9bf5b;
+  --violet: #b49cff;
+  --orange: #ff9f6e;
+  --red: #ff6f86;
+  --slate: #93a1b5;
+  --shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+  background:
+    linear-gradient(180deg, rgba(39, 53, 78, 0.48) 0%, rgba(8, 10, 15, 0) 280px),
+    #080a0f;
+}
+
+.darkTheme .mainSurface {
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.07), rgba(8, 10, 15, 0) 220px),
+    var(--bg);
+  box-shadow: none;
+}
+
+.darkTheme .mainSurface.calendarMode {
+  background: var(--bg);
+}
+
+.darkTheme .sidebar {
+  border-right-color: rgba(148, 163, 184, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    #0d121c;
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+.darkTheme .collapsedSidebarRail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    #0d121c;
+}
+
+.darkTheme :is(.dashboardPanel, .analyticsStrip, .plannerBoard, .timelinePanel, .taskColumn, .taskDetails, .weeklyGlance, .productLoopPanel, .goalsGrid, .railPanel, .calendarToolbar, .calendarBoard, .taskCommandHero, .taskHubMain, .taskHubSide, .goalCardLarge, .chartPanel, .focusConsole, .checkInComposer, .scheduleDialog, .goalDialog, .topbarPopover) {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.015)),
+    var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.darkTheme :is(.pageHero, .taskCommandHero) {
+  border-color: var(--border);
+  background:
+    linear-gradient(135deg, rgba(91, 140, 255, 0.13), rgba(55, 217, 158, 0.055) 54%, rgba(255, 255, 255, 0.026)),
+    var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.darkTheme :is(.viewStat, .taskStageCard, .goalScopeStat, .productLoopGrid article, .taskRow, .taskAgendaRow, .agendaTime, .goalMetaGrid div, .checkInPreview, .checkInTimeline article, .calendarWeekStrip button, .focusPresetGrid button, .focusTimeTarget > div, .energySelector button, .goalTypeGrid button, .goalCadenceCallout, .notificationList article, .popoverList button, .profilePopoverHeader, .profileThemeToggle, .taskListEmpty) {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.018)),
+    var(--surface-soft);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.darkTheme :is(.topbar h1, .calendarTitleBlock h1, .pageHero h2, .taskCommandHero h2, .dashboardPanel .panelHeader h2, .panelHeader strong, .metricCard strong, .weeklyInsight h2, .profileButton strong, .profilePopoverHeader strong, .profileMenuList strong, .profileThemeToggle strong, .viewStat strong, .taskStageCard strong, .goalScopeStat strong, .goalCardTop h2, .goalCardTop > strong, .goalMetaGrid dd, .analyticsInsight strong, .chartPanel .panelHeader > strong, .goalMomentumRow span, .focusConsole h2, .focusConsoleTimer, .checkInComposer h2, .checkInPreview p, .checkInTimeline strong, .dialogHeader h2, .taskRow strong, .agendaMain strong, .agendaTime strong, .priorityWorkloadRow strong, .habitName strong, .habitStreak, .detailTop h2, .taskDetails dd, .calendarSelectionBar strong, .calendarWeekStrip b) {
+  color: var(--text);
+}
+
+.darkTheme :is(.topbar p, .calendarTitleBlock p, .pageHero p, .viewStat p, .viewStat small, .taskStageCard small, .taskStageCard em, .goalScopeStat p, .goalCardTop p, .analyticsInsight p, .chartPanel p, .profileButton small, .profilePopoverHeader small, .profileMenuList small, .notificationList small, .popoverList button small, .dialogHeader p, .taskRow small, .agendaTime span, .agendaMain span, .taskQueueToolbar > span, .priorityWorkloadRow b, .habitName small, .calendarWeekStrip small, .calendarWeekStrip em, .detailTop + dl dt, .taskDetails dt, .notes h3, .notes p, .checkInTimeline p, .checkInTimeline small, .emptyLine, .popoverEmpty) {
+  color: var(--muted);
+}
+
+.darkTheme :is(.sectionHeading, .eyebrow, .checkInComposer label, .energySelector legend, .scheduleDialog label, .focusTimeTarget label) {
+  color: var(--muted);
+}
+
+.darkTheme :is(.dateButton, .stepper, .viewSwitch, .iconButton, .profileButton, .searchField, .calendarOptions button, .calendarOptions span, .calendarOptions strong, .filterTabs, .dayControls > button, .quietButton, .secondaryButton, .habitScheduleButton, input, select, textarea, .scheduleDialog input, .scheduleDialog select, .scheduleDialog textarea, .checkInComposer input, .checkInComposer select, .checkInComposer textarea) {
+  border-color: var(--border);
+  background: var(--surface-inset);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.darkTheme :is(input, select, textarea)::placeholder {
+  color: var(--faint);
+}
+
+.darkTheme .searchField input {
+  background: transparent;
+  color: var(--text);
+}
+
+.darkTheme :is(.iconButton, .collapsedNav button, .navList button, .filterTabs button, .calendarBoardHeader button, .viewSwitch button, .profileMenuList button, .profileMenuFooter button, .quietButton, .secondaryButton) {
+  color: var(--muted);
+}
+
+.darkTheme :is(.iconButton:hover, .dateButton:hover, .profileButton:hover, .profileButton[aria-expanded="true"], .popoverList button:hover, .profileMenuList button:hover, .profileMenuFooter button:hover, .quietButton:hover, .secondaryButton:hover, .habitScheduleButton:hover, .filterTabs button:hover, .calendarOptions button:hover, .dayControls > button:hover, .energySelector button:hover, .focusPresetGrid button:hover, .goalTypeGrid button:hover, .taskRow:hover, .taskRow.selected, .taskAgendaRow:hover, .taskAgendaRow.selected) {
+  border-color: rgba(110, 168, 255, 0.42);
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.16), rgba(91, 140, 255, 0.08)),
+    var(--surface-soft);
+  color: #e8f1ff;
+}
+
+.darkTheme :is(.navList button:hover, .navList button.active, .collapsedNav button:hover, .collapsedNav button.active, .filterTabs button.active, .viewSwitch button.active, .calendarOptions button.active, .focusPresetGrid button.active, .goalTypeGrid button.active) {
+  border-color: rgba(110, 168, 255, 0.48);
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.2), rgba(91, 140, 255, 0.11)),
+    #101a2c;
+  color: #dce9ff;
+  box-shadow: 0 0 0 1px rgba(110, 168, 255, 0.1) inset;
+}
+
+.darkTheme .brand {
+  color: #f7f9ff;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.darkTheme .brandMark {
+  position: relative;
+  border: 1px solid rgba(110, 168, 255, 0.34);
+  background:
+    radial-gradient(circle at 30% 18%, rgba(110, 168, 255, 0.36), rgba(110, 168, 255, 0.08) 34%, transparent 64%),
+    linear-gradient(180deg, #182235, #0b111c);
+  color: #9fc5ff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    0 0 24px rgba(91, 140, 255, 0.16);
+}
+
+.darkTheme .brandMark::after {
+  position: absolute;
+  inset: 3px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  content: "";
+  pointer-events: none;
+}
+
+.darkTheme .brandMark.compact {
+  border-color: rgba(110, 168, 255, 0.36);
+  background:
+    radial-gradient(circle at 30% 18%, rgba(110, 168, 255, 0.38), rgba(110, 168, 255, 0.08) 36%, transparent 66%),
+    linear-gradient(180deg, #1a263a, #0b111c);
+}
+
+.darkTheme .loadingMark {
+  border: 1px solid rgba(110, 168, 255, 0.34);
+  background:
+    radial-gradient(circle at 30% 18%, rgba(110, 168, 255, 0.36), rgba(110, 168, 255, 0.08) 34%, transparent 64%),
+    linear-gradient(180deg, #182235, #0b111c);
+  color: #9fc5ff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 16px 34px rgba(0, 0, 0, 0.32),
+    0 0 30px rgba(91, 140, 255, 0.18);
+}
+
+.darkTheme .profileAvatar {
+  box-shadow: 0 10px 24px rgba(91, 140, 255, 0.22);
+}
+
+.darkTheme .profileCard {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    var(--surface-soft);
+}
+
+.darkTheme .profileCard strong {
+  color: var(--text);
+}
+
+.darkTheme .avatar {
+  border: 1px solid rgba(110, 168, 255, 0.2);
+  background: rgba(110, 168, 255, 0.12);
+  color: #cfe0ff;
+}
+
+.darkTheme .sectionHeading b,
+.darkTheme .sectionIconButton {
+  border-color: rgba(110, 168, 255, 0.22);
+  background: rgba(110, 168, 255, 0.12);
+  color: #b8d5ff;
+}
+
+.darkTheme .sectionIconButton:hover {
+  border-color: rgba(110, 168, 255, 0.5);
+  background: rgba(110, 168, 255, 0.2);
+  color: #eef5ff;
+}
+
+.darkTheme .notification::after {
+  border-color: #0d121c;
+  background: var(--blue);
+  box-shadow: 0 0 0 3px rgba(110, 168, 255, 0.12);
+}
+
+.darkTheme :is(.primaryButton, .calendarDropGuide span) {
+  background: linear-gradient(180deg, #73a7ff, #366ff5);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(54, 111, 245, 0.25);
+}
+
+.darkTheme .primaryButton:hover {
+  background: linear-gradient(180deg, #8ab7ff, #447cff);
+}
+
+.darkTheme :is(.metricCard, .taskColumn, .timelinePanel) {
+  border-color: var(--border);
+}
+
+.darkTheme .analyticsStrip {
+  overflow: hidden;
+}
+
+.darkTheme .metricCard {
+  background: transparent;
+  box-shadow: none;
+}
+
+.darkTheme .metricCard:not(:last-child) {
+  border-right-color: var(--border);
+}
+
+.darkTheme .metricCard p,
+.darkTheme .weeklyGlance p {
+  color: #c4ccda;
+}
+
+.darkTheme .metricCard strong span {
+  color: var(--muted);
+}
+
+.darkTheme .metricDelta {
+  color: #4adeb1;
+}
+
+.darkTheme .metricDelta.neutral {
+  color: var(--muted);
+}
+
+.darkTheme .metricDelta.negative {
+  color: #ff8aa0;
+}
+
+.darkTheme .weeklyInsight {
+  border-left: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, rgba(91, 140, 255, 0.14), rgba(55, 217, 158, 0.045)),
+    rgba(17, 23, 34, 0.92);
+}
+
+.darkTheme .weeklyInsight > span,
+.darkTheme :is(.calendarToolbarIcon, .taskStageCard > span, .popoverList button span, .notificationList svg) {
+  border-color: rgba(110, 168, 255, 0.22);
+  background: rgba(110, 168, 255, 0.14);
+  color: var(--blue);
+}
+
+.darkTheme .weeklyInsight small {
+  color: #9cc3ff;
+}
+
+.darkTheme .progressTrack,
+.darkTheme .focusTimerTrack {
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.darkTheme .miniBars span {
+  background: linear-gradient(180deg, #9bc2ff, #4f83ff);
+}
+
+.darkTheme .miniBars.green span {
+  background: linear-gradient(180deg, #76e8b6, #25c989);
+}
+
+.darkTheme .miniBars.slate span {
+  background: linear-gradient(180deg, #bac6d7, #72829a);
+}
+
+.darkTheme .goalLabel,
+.darkTheme .goalMini > div > div,
+.darkTheme .goalMini b,
+.darkTheme .goalLabel span {
+  color: var(--muted);
+}
+
+.darkTheme .goalIcon.blue {
+  background: rgba(110, 168, 255, 0.14);
+  color: #b8d5ff;
+}
+
+.darkTheme .goalIcon.green {
+  background: rgba(55, 217, 158, 0.14);
+  color: #95f0c8;
+}
+
+.darkTheme .goalIcon.violet {
+  background: rgba(180, 156, 255, 0.14);
+  color: #d7ccff;
+}
+
+.darkTheme .goalIcon.orange {
+  background: rgba(255, 159, 110, 0.14);
+  color: #ffc6a8;
+}
+
+.darkTheme .sparkline polyline {
+  stroke: var(--blue);
+}
+
+.darkTheme .sparkline circle {
+  fill: var(--blue);
+}
+
+.darkTheme .sparkline.green polyline {
+  stroke: var(--green);
+}
+
+.darkTheme .sparkline.green circle {
+  fill: var(--green);
+}
+
+.darkTheme .focusTimerReadout {
+  border-color: rgba(110, 168, 255, 0.32);
+  background:
+    linear-gradient(135deg, rgba(110, 168, 255, 0.16), rgba(55, 217, 158, 0.06)),
+    linear-gradient(180deg, #151f31, #101724);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.055) inset,
+    0 18px 36px rgba(0, 0, 0, 0.26);
+}
+
+.darkTheme .focusConsoleTimer {
+  color: #f8fbff;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.darkTheme .focusTimerReadout span,
+.darkTheme .focusTimeTarget span,
+.darkTheme .focusPresetGrid span,
+.darkTheme .focusPresetGrid small {
+  color: var(--muted);
+}
+
+.darkTheme .focusTimeTarget input {
+  background: transparent;
+  color: var(--text);
+}
+
+.darkTheme .focusPresetGrid button.active span {
+  color: #9cc3ff;
+}
+
+.darkTheme .timerButton {
+  background: linear-gradient(180deg, #73a7ff, #366ff5);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.12),
+    0 16px 34px rgba(54, 111, 245, 0.26);
+}
+
+.darkTheme .stopButton {
+  border-color: var(--border);
+  background: var(--surface-inset);
+  color: var(--muted);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.darkTheme .stopButton:hover {
+  border-color: rgba(110, 168, 255, 0.42);
+  background: rgba(110, 168, 255, 0.12);
+  color: #e8f1ff;
+}
+
+.darkTheme .focusProgress {
+  color: var(--muted);
+}
+
+.darkTheme .livePill {
+  border: 1px solid rgba(55, 217, 158, 0.24);
+  background: rgba(55, 217, 158, 0.12);
+  color: #8ff0c3;
+}
+
+.darkTheme .livePill.running {
+  border-color: rgba(110, 168, 255, 0.3);
+  background: rgba(110, 168, 255, 0.14);
+  color: #b8d5ff;
+}
+
+.darkTheme .livePill.done {
+  color: #8ff0c3;
+}
+
+.darkTheme .calendarBoardHeader,
+.darkTheme .calendarAllDay,
+.darkTheme .calendarSelectionBar {
+  border-color: var(--border);
+  background: var(--surface-inset);
+}
+
+.darkTheme .calendarBoardHeader button {
+  border-right-color: var(--border);
+}
+
+.darkTheme .calendarBoardHeader button.today {
+  background: rgba(110, 168, 255, 0.13);
+  color: #cfe1ff;
+}
+
+.darkTheme .calendarBoardHeader button.selected {
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+}
+
+.darkTheme .calendarBoardHeader button strong {
+  color: var(--text);
+}
+
+.darkTheme .calendarBoardHeader button.today strong {
+  background: linear-gradient(180deg, #79acff, #3e75f4);
+  color: #fff;
+}
+
+.darkTheme :is(.calendarDayLane, .calendarAllDay div) {
+  border-color: var(--border);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      rgba(148, 163, 184, 0.1) calc((100% / 13) - 1px),
+      rgba(148, 163, 184, 0.1) calc(100% / 13)
+    ),
+    #0c111a;
+}
+
+.darkTheme .calendarDayLane.today {
+  background:
+    linear-gradient(180deg, rgba(110, 168, 255, 0.1), rgba(12, 17, 26, 0.2)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      rgba(148, 163, 184, 0.11) calc((100% / 13) - 1px),
+      rgba(148, 163, 184, 0.11) calc(100% / 13)
+    ),
+    #0d1320;
+}
+
+.darkTheme .calendarDayLane.dragTarget {
+  background:
+    linear-gradient(180deg, rgba(110, 168, 255, 0.16), rgba(12, 17, 26, 0.22)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      rgba(110, 168, 255, 0.2) calc((100% / 13) - 1px),
+      rgba(110, 168, 255, 0.2) calc(100% / 13)
+    ),
+    #0d1320;
+  box-shadow: inset 0 0 0 2px rgba(110, 168, 255, 0.2);
+}
+
+.darkTheme .calendarTimeLabels,
+.darkTheme .calendarTimezone {
+  border-color: var(--border);
+  background: #0c111a;
+  color: var(--muted);
+}
+
+.darkTheme .calendarNowLine,
+.darkTheme .calendarNowLine::before,
+.darkTheme .nowLine {
+  background: var(--red);
+}
+
+.darkTheme .calendarDropGuide {
+  border-top-color: var(--blue);
+}
+
+.darkTheme .calendarDropGuide::before,
+.darkTheme .calendarDropGuide::after {
+  background: var(--blue);
+}
+
+.darkTheme :is(.calendarEvent, .calendarAllDay button, .calendarBlock) {
+  border-color: rgba(110, 168, 255, 0.42);
+  background: linear-gradient(180deg, rgba(110, 168, 255, 0.22), rgba(58, 111, 245, 0.13));
+  color: #cfe0ff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.darkTheme :is(.calendarEvent strong, .calendarBlock strong) {
+  color: #f4f8ff;
+}
+
+.darkTheme :is(.calendarEvent span, .calendarEvent small, .calendarBlock span) {
+  color: #bdd2ff;
+}
+
+.darkTheme :is(.calendarEvent.amber, .calendarBlock.amber) {
+  border-color: rgba(249, 191, 91, 0.42);
+  background: linear-gradient(180deg, rgba(249, 191, 91, 0.22), rgba(249, 191, 91, 0.11));
+  color: #ffdfaa;
+}
+
+.darkTheme :is(.calendarEvent.amber strong) {
+  color: #fff4df;
+}
+
+.darkTheme :is(.calendarEvent.amber span, .calendarEvent.amber small, .calendarBlock.amber span) {
+  color: #ffd79a;
+}
+
+.darkTheme :is(.calendarEvent.violet, .calendarBlock.violet) {
+  border-color: rgba(180, 156, 255, 0.42);
+  background: linear-gradient(180deg, rgba(180, 156, 255, 0.23), rgba(180, 156, 255, 0.11));
+  color: #dcd3ff;
+}
+
+.darkTheme :is(.calendarEvent.violet strong) {
+  color: #f3efff;
+}
+
+.darkTheme :is(.calendarEvent.violet span, .calendarEvent.violet small, .calendarBlock.violet span) {
+  color: #d7ccff;
+}
+
+.darkTheme :is(.calendarEvent.green, .calendarBlock.green) {
+  border-color: rgba(55, 217, 158, 0.42);
+  background: linear-gradient(180deg, rgba(55, 217, 158, 0.22), rgba(55, 217, 158, 0.11));
+  color: #b5f5d7;
+}
+
+.darkTheme :is(.calendarEvent.green strong) {
+  color: #e8fff3;
+}
+
+.darkTheme :is(.calendarEvent.green span, .calendarEvent.green small, .calendarBlock.green span) {
+  color: #a9ebcf;
+}
+
+.darkTheme :is(.calendarEvent.slate, .calendarBlock.slate) {
+  border-color: rgba(148, 163, 184, 0.32);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.08));
+  color: #cad4e2;
+}
+
+.darkTheme :is(.calendarEvent.slate strong) {
+  color: #edf2f8;
+}
+
+.darkTheme :is(.calendarEvent.slate span, .calendarEvent.slate small, .calendarBlock.slate span) {
+  color: #c5d0df;
+}
+
+.darkTheme .calendarCanvas {
+  background:
+    linear-gradient(90deg, rgba(110, 168, 255, 0.08) 0 1px, transparent 1px) 0 0 / 20% 100%,
+    #0c111a;
+}
+
+.darkTheme .gridLine {
+  border-bottom-color: rgba(148, 163, 184, 0.12);
+}
+
+.darkTheme .weeklyGlance strong,
+.darkTheme .donutPanel li {
+  color: var(--text);
+}
+
+.darkTheme .donut {
+  box-shadow: inset 0 0 0 18px var(--surface-inset);
+}
+
+.darkTheme .timeLabels {
+  border-right-color: var(--border);
+  background: #0c111a;
+  color: var(--muted);
+}
+
+.darkTheme :is(.goalScopePill, .tagRow span, .priority, .agendaMain .agendaTitleLine em, .profilePopoverHeader em, .profileThemeToggle small, .filterTabs button span, .checkInStatus) {
+  background: rgba(148, 163, 184, 0.14);
+  color: #d6dfec;
+}
+
+.darkTheme :is(.goalScopePill.day, .priority.low, .goalScopeStat.green > span, .goalTypeIcon.green, .habitDay.done) {
+  background: rgba(55, 217, 158, 0.14);
+  color: #95f0c8;
+}
+
+.darkTheme :is(.goalScopePill.month, .goalScopeStat.blue > span, .goalTypeIcon.blue, .checkInStatus) {
+  background: rgba(110, 168, 255, 0.14);
+  color: #b8d5ff;
+}
+
+.darkTheme :is(.goalScopePill.year, .goalScopeStat.violet > span, .goalTypeIcon.violet) {
+  background: rgba(180, 156, 255, 0.14);
+  color: #d7ccff;
+}
+
+.darkTheme :is(.priority.high) {
+  background: rgba(255, 111, 134, 0.13);
+  color: #ffb4c2;
+}
+
+.darkTheme :is(.priority.medium) {
+  background: rgba(249, 191, 91, 0.13);
+  color: #ffdda8;
+}
+
+.darkTheme .taskCheck,
+.darkTheme .agendaToggle,
+.darkTheme .habitDay {
+  border-color: rgba(171, 186, 207, 0.28);
+  background: var(--surface-inset);
+  color: #fff;
+}
+
+.darkTheme :is(.taskCheck.done, .agendaToggle.done) {
+  border-color: var(--blue);
+  background: linear-gradient(180deg, #73a7ff, #366ff5);
+}
+
+.darkTheme .habitDay.done {
+  border-color: rgba(55, 217, 158, 0.58);
+  background: linear-gradient(180deg, #47dfa7, #1dbb7d);
+  color: #06110c;
+}
+
+.darkTheme .taskAgendaRow.completed {
+  background: rgba(148, 163, 184, 0.055);
+}
+
+.darkTheme .taskAgendaRow.completed .agendaMain strong {
+  color: var(--faint);
+}
+
+.darkTheme .taskListEmpty,
+.darkTheme .popoverEmpty {
+  border-color: rgba(171, 186, 207, 0.24);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.darkTheme .modalBackdrop {
+  background: rgba(2, 6, 14, 0.68);
+  backdrop-filter: blur(12px);
+}
+
+.darkTheme .goalProgressField input[type="range"] {
+  accent-color: var(--blue);
+}
+
+.darkTheme ::selection {
+  background: rgba(110, 168, 255, 0.32);
+  color: #fff;
 }
 
 @media (prefers-reduced-motion: no-preference) {
