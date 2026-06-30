@@ -1422,7 +1422,7 @@ function ProductPreview() {
   );
 }
 
-function AuthPage({ mode, onNavigate }) {
+function AuthPage({ mode, onNavigate, theme }) {
   const isSignup = mode === "signup";
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
@@ -1474,6 +1474,10 @@ function AuthPage({ mode, onNavigate }) {
       setIsSubmitting(false);
     }
   };
+
+  if (isSubmitting) {
+    return <LoadingScreen theme={theme} isWorkspaceLoading />;
+  }
 
   return (
     <main className="authPage">
@@ -2195,9 +2199,18 @@ function TaskColumn({ tasks, inbox, selectedTaskId, onSelectTask, onToggleComple
 }
 
 function Timeline({ tasks, selectedTaskId, onSelectTask }) {
+  const timelineDate = tasks[0] ? getTaskDate(tasks[0]) : getToday();
+  const scheduledMinutes = tasks.reduce((sum, task) => sum + minutesBetween(task.start, task.end), 0);
+  const taskLabel = tasks.length === 1 ? "task" : "tasks";
+  const scheduleSummary = tasks.length ? `${tasks.length} ${taskLabel} - ${formatDuration(scheduledMinutes)} scheduled` : "No scheduled blocks yet";
+
   return (
     <section className="timelinePanel" aria-label="Day calendar">
       <div className="timelineHeader">
+        <div className="timelineTitle">
+          <h2>{fullDateFormatter.format(timelineDate)}</h2>
+          <p>{scheduleSummary}</p>
+        </div>
         <div className="dayControls">
           <button type="button">Today</button>
           <span className="stepper">
@@ -2209,17 +2222,10 @@ function Timeline({ tasks, selectedTaskId, onSelectTask }) {
             </IconButton>
           </span>
         </div>
-        <div>
-          <h2>Monday, June 22, 2026</h2>
-          <p>8 tasks - 6h 45m scheduled</p>
-        </div>
         <div className="viewSwitch" role="tablist" aria-label="Calendar view">
           <button className="active" type="button">Day</button>
           <button type="button">Week</button>
           <button type="button">Month</button>
-          <IconButton label="Calendar settings">
-            <SlidersHorizontal size={17} />
-          </IconButton>
         </div>
       </div>
 
@@ -2267,7 +2273,7 @@ function TaskDetails({ task, onClose, onToggleComplete, onDelete }) {
       <section className="taskDetails emptyState" aria-label="Selected task">
         <Clock3 size={22} />
         <h2>Select a task</h2>
-        <p>Choose a scheduled block to see notes, reminders, and check-in actions.</p>
+        <p>Pick a block to review notes, reminders, and check-in actions.</p>
       </section>
     );
   }
@@ -2359,7 +2365,7 @@ function PlannerBoard({ tasks, inbox, selectedTaskId, setSelectedTaskId, setTask
   };
 
   return (
-    <section className="plannerBoard" aria-label="Planner workspace">
+    <section className={`plannerBoard ${selectedTask ? "hasTaskDetails" : "plannerBoardEmpty"}`} aria-label="Planner workspace">
       <TaskColumn
         tasks={tasks}
         inbox={inbox}
@@ -4372,6 +4378,57 @@ function GoalDialog({ open, onClose, onCreate }) {
   );
 }
 
+function LoadingScreen({ theme, isWorkspaceLoading }) {
+  const loadingSteps = [
+    { label: "Calendar", icon: CalendarDays },
+    { label: "Tasks", icon: ListChecks },
+    { label: "Focus", icon: Focus },
+  ];
+  const statusText = isWorkspaceLoading ? "Preparing your workspace" : "Opening Mark";
+
+  return (
+    <main className={`appShell loadingShell ${theme === "dark" ? "darkTheme" : ""}`} aria-busy="true" aria-live="polite">
+      <section className="loadingStage" aria-label={statusText}>
+        <div className="loadingAura" aria-hidden="true" />
+        <div className="loadingCard">
+          <div className="loadingBrand">
+            <div className="loadingMark" aria-hidden="true">
+              <span>M</span>
+            </div>
+            <div>
+              <strong>Mark</strong>
+              <p>{statusText}</p>
+            </div>
+          </div>
+
+          <div className="loadingTrace" aria-hidden="true">
+            <span />
+          </div>
+
+          <div className="loadingGrid" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <div className="loadingSteps" aria-hidden="true">
+            {loadingSteps.map((item) => {
+              const StepIcon = item.icon;
+              return (
+                <span key={item.label}>
+                  <StepIcon size={14} />
+                  {item.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export function App() {
   const [tasks, setTasks] = useState([]);
   const [reminders, setReminders] = useState([]);
@@ -4462,7 +4519,7 @@ export function App() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setAppReady(true), 250);
+    const timer = window.setTimeout(() => setAppReady(true), 950);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -4791,25 +4848,24 @@ export function App() {
     navigateEntry("app");
   };
 
+  if (!appReady) {
+    return <LoadingScreen theme={theme} isWorkspaceLoading={entryView === "app"} />;
+  }
+
   if (entryView === "landing") {
     return <LandingPage onNavigate={navigateEntry} />;
   }
 
   if (entryView === "login" || entryView === "signup") {
-    return <AuthPage mode={entryView} onNavigate={navigateEntry} />;
+    return <AuthPage mode={entryView} onNavigate={navigateEntry} theme={theme} />;
   }
 
   if (entryView === "onboarding") {
     return <OnboardingPage onNavigate={navigateEntry} onComplete={completeOnboarding} />;
   }
 
-  if (!appReady || (entryView === "app" && isWorkspaceLoading)) {
-    return (
-      <main className={`appShell loadingShell ${theme === "dark" ? "darkTheme" : ""}`} aria-busy="true">
-        <div className="loadingMark">M</div>
-        <p>{isWorkspaceLoading ? "Loading your Mark workspace..." : "Loading Mark workspace..."}</p>
-      </main>
-    );
+  if (entryView === "app" && isWorkspaceLoading) {
+    return <LoadingScreen theme={theme} isWorkspaceLoading={entryView === "app" && isWorkspaceLoading} />;
   }
 
   return (
