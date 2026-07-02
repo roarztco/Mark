@@ -19,6 +19,7 @@ export async function uploadAvatar(options: UploadOptions) {
   const path = buildUserScopedPath(options);
   const result = await supabase.storage.from(MARK_AVATARS_BUCKET).upload(path, options.file, {
     cacheControl: "3600",
+    contentType: options.file.type,
     upsert: true,
   });
 
@@ -26,6 +27,14 @@ export async function uploadAvatar(options: UploadOptions) {
 
   const { data } = supabase.storage.from(MARK_AVATARS_BUCKET).getPublicUrl(path);
   return { ...result, publicUrl: data.publicUrl };
+}
+
+export function getAvatarPublicUrl(path?: string | null) {
+  if (!path) return "";
+  if (/^(https?:|data:|blob:)/i.test(path)) return path;
+
+  const { data } = supabase.storage.from(MARK_AVATARS_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export async function uploadAttachment(options: UploadOptions) {

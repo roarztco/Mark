@@ -42,10 +42,11 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getSession, signInWithEmail, signInWithGoogle, signOut, signUpWithEmail } from "./lib/supabase/auth";
 import { createUserRow, deleteUserRow, getWorkspaceSnapshot, updateUserRow } from "./lib/mark/repositories";
 import { supabase } from "./lib/supabase/client";
+import { getAvatarPublicUrl, uploadAvatar } from "./lib/supabase/storage";
 
 const navItems = [
   { label: "Overview", icon: Grid2X2 },
@@ -300,8 +301,23 @@ const linkedAreaOptions = [
   "Other",
 ];
 
-const checkInFocusOptions = ["30m", "1h", "2h", "3h", "4h+"];
+const checkInFocusOptions = [
+  { value: "30m", label: "30m", detail: "Quick reset" },
+  { value: "1h", label: "1h", detail: "Focused block" },
+  { value: "2h", label: "2h", detail: "Deep work" },
+  { value: "3h", label: "3h", detail: "Strong session" },
+  { value: "4h+", label: "4h+", detail: "Long push" },
+];
 const checkInEnergyOptions = ["Low", "Steady", "High"];
+const taskPriorityOptions = [
+  { value: "High", label: "High", detail: "Needs attention" },
+  { value: "Medium", label: "Medium", detail: "Planned work" },
+  { value: "Low", label: "Low", detail: "Later queue" },
+];
+const taskCategoryOptions = ["Focus", "Planning", "Routine", "Meeting", "Creation", "Health", "Study", "Review", "Operations"].map((option) => ({
+  value: option,
+  label: option,
+}));
 const focusTimerPresets = [
   {
     id: "pomodoro",
@@ -328,6 +344,8 @@ const focusTimerPresets = [
     detail: "Protect a serious block",
   },
 ];
+const avatarMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const maxAvatarFileBytes = 5 * 1024 * 1024;
 
 function getGoalIcon(goal) {
   return goalIconMap[goal.iconKey] ?? Goal;
@@ -613,14 +631,63 @@ function getInitials(name, email) {
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "M";
 }
 
+function getUserMetadataAvatar(user) {
+  const metadata = user?.user_metadata ?? {};
+  const identityData = user?.identities?.find((identity) => identity?.identity_data)?.identity_data ?? {};
+
+  return (
+    metadata.avatar_url ||
+    metadata.picture ||
+    metadata.photo_url ||
+    identityData.avatar_url ||
+    identityData.picture ||
+    identityData.photo_url ||
+    ""
+  );
+}
+
+function getViewerAvatarUrl(user, profile) {
+  return getAvatarPublicUrl(profile?.avatar_path) || getUserMetadataAvatar(user);
+}
+
+function validateAvatarFile(file) {
+  if (!file) return "Choose an image first.";
+  if (!avatarMimeTypes.has(file.type)) return "Use a PNG, JPG, WEBP, or GIF image.";
+  if (file.size > maxAvatarFileBytes) return "Keep profile photos under 5MB.";
+  return "";
+}
+
 function buildViewer(user, profile) {
   const name = getUserDisplayName(user, profile);
   return {
+    id: user?.id ?? "",
     name,
     email: user?.email ?? "No email",
     initials: getInitials(name, user?.email),
+    avatarPath: profile?.avatar_path ?? "",
+    avatarUrl: getViewerAvatarUrl(user, profile),
     plan: "Free Plan",
   };
+}
+
+function UserAvatar({ viewer, className = "", large = false }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const avatarUrl = !imageFailed ? viewer?.avatarUrl : "";
+  const classes = ["profileAvatar", large ? "large" : "", avatarUrl ? "hasImage" : "", className].filter(Boolean).join(" ");
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [viewer?.avatarUrl]);
+
+  return (
+    <span className={classes} aria-hidden="true">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} />
+      ) : (
+        viewer?.initials ?? "M"
+      )}
+    </span>
+  );
 }
 
 function createAreaLookup(areas = []) {
@@ -1190,6 +1257,148 @@ function WebButton({ children, variant = "primary", className = "", ...props }) 
     <button className={`webButton ${variant} ${className}`} type="button" {...props}>
       {children}
     </button>
+  );
+}
+
+function normalizeSelectOptions(options) {
+  return options.map((option) => {
+    if (typeof option === "string") {
+      return { value: option, label: option };
+    }
+
+    return {
+      ...option,
+      value: String(option.value),
+      label: option.label ?? String(option.value),
+    };
+  });
+}
+
+function MarkSelect({ value, onChange, options, label, placeholder = "Choose an option", className = "" }) {
+  const normalizedOptions = useMemo(() => normalizeSelectOptions(options), [options]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState({});
+  const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const selectedValue = value == null ? "" : String(value);
+  const selectedIndex = normalizedOptions.findIndex((option) => option.value === selectedValue);
+  const selectedOption = selectedIndex >= 0 ? normalizedOptions[selectedIndex] : null;
+
+  const updateMenuPosition = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const spaceBelow = viewportHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+    const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+    const maxHeight = Math.min(280, Math.max(150, openUp ? spaceAbove : spaceBelow));
+
+    setMenuStyle({
+      left: `${rect.left}px`,
+      top: `${openUp ? Math.max(8, rect.top - maxHeight - 6) : rect.bottom + 6}px`,
+      width: `${rect.width}px`,
+      maxHeight: `${maxHeight}px`,
+      "--select-origin": openUp ? "bottom" : "top",
+    });
+  };
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    updateMenuPosition();
+
+    const closeOnPointerDown = (event) => {
+      if (rootRef.current?.contains(event.target)) return;
+      setIsOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnPointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnPointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [isOpen]);
+
+  const chooseOption = (option) => {
+    onChange(option.value);
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  const stepOption = (direction) => {
+    if (!normalizedOptions.length) return;
+    const baseIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIndex = (baseIndex + direction + normalizedOptions.length) % normalizedOptions.length;
+    onChange(normalizedOptions[nextIndex].value);
+    setIsOpen(true);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      stepOption(1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      stepOption(-1);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setIsOpen((current) => !current);
+    }
+  };
+
+  return (
+    <div className={`markSelect ${isOpen ? "open" : ""} ${className}`} ref={rootRef}>
+      <button
+        ref={triggerRef}
+        className="markSelectTrigger"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={label}
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={handleKeyDown}
+      >
+        <span className="markSelectTriggerText">
+          <span className={selectedOption ? "markSelectValue" : "markSelectValue placeholder"}>{selectedOption?.label ?? placeholder}</span>
+          {selectedOption?.detail ? <small>{selectedOption.detail}</small> : null}
+        </span>
+        <ChevronDown className="markSelectChevron" size={17} aria-hidden="true" />
+      </button>
+
+      {isOpen ? (
+        <div className="markSelectMenu" role="listbox" aria-label={label} style={menuStyle}>
+          {normalizedOptions.map((option) => {
+            const active = option.value === selectedValue;
+            return (
+              <button
+                key={option.value}
+                className={`markSelectOption ${active ? "selected" : ""}`}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => chooseOption(option)}
+              >
+                <span>
+                  <strong>{option.label}</strong>
+                  {option.detail ? <small>{option.detail}</small> : null}
+                </span>
+                <Check className="markSelectCheck" size={15} aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1776,9 +1985,7 @@ function Sidebar({ goals, inbox, activeNav, setActiveNav, onAddTask, onAddGoal, 
       </div>
 
       <div className="profileCard">
-        <div className="avatar">
-          <UserRound size={19} />
-        </div>
+        <UserAvatar viewer={viewer} className="profileCardAvatar" />
         <div>
           <strong>{viewer.name}</strong>
           <span>{viewer.plan}</span>
@@ -1789,19 +1996,336 @@ function Sidebar({ goals, inbox, activeNav, setActiveNav, onAddTask, onAddGoal, 
   );
 }
 
-function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
+function ProfileMenu({
+  theme,
+  onToggleTheme,
+  onSetTheme,
+  viewer = buildViewer(null, null),
+  onSignOut = () => {},
+  onSaveProfile,
+  onSaveAvatar,
+  onRemoveAvatar,
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState("account");
+  const [displayName, setDisplayName] = useState(viewer.name);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const [workspaceName, setWorkspaceName] = usePersistentState("mark.workspaceName.v1", "My Mark workspace");
+  const [profileStatus, setProfileStatus] = useState("");
+  const [profilePrefs, setProfilePrefs] = usePersistentState("mark.profilePrefs.v1", {
+    dailyReview: true,
+    smartReminders: true,
+    privateAnalytics: true,
+    weeklyEmail: false,
+    commandCenter: true,
+  });
+  const [workingMode, setWorkingMode] = usePersistentState("mark.workingMode.v1", "Balanced");
+  const menuRef = useRef(null);
+  const avatarInputRef = useRef(null);
   const isDark = theme === "dark";
   const profileItems = [
-    { label: "Account", detail: "Profile, email, password", icon: UserRound },
-    { label: "Settings", detail: "Workspace and reminders", icon: Settings2 },
-    { label: "Your plan", detail: "Pro Plan active", icon: CreditCard },
-    { label: "Privacy", detail: "Security and data controls", icon: ShieldCheck },
-    { label: "Shortcuts", detail: "Keyboard command center", icon: Keyboard },
+    { id: "account", label: "Account", detail: "Profile and workspace", icon: UserRound },
+    { id: "settings", label: "Settings", detail: "Reminders and rhythm", icon: Settings2 },
+    { id: "plan", label: "Your plan", detail: `${viewer.plan} active`, icon: CreditCard },
+    { id: "privacy", label: "Privacy", detail: "Security and data controls", icon: ShieldCheck },
+    { id: "shortcuts", label: "Shortcuts", detail: "Keyboard command center", icon: Keyboard },
+  ];
+  const shortcuts = [
+    ["Open search", "Ctrl K"],
+    ["Add task", "A"],
+    ["Start focus", "F"],
+    ["Jump calendar", "G C"],
   ];
 
+  useEffect(() => {
+    setDisplayName(viewer.name);
+  }, [viewer.name]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const closeOnPointerDown = (event) => {
+      if (menuRef.current?.contains(event.target)) return;
+      setIsOpen(false);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnPointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnPointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
+  const openPanel = (panel) => {
+    setActivePanel(panel);
+    setProfileStatus("");
+  };
+
+  const setPreference = (key, value) => {
+    setProfilePrefs((current) => ({ ...current, [key]: value }));
+    setProfileStatus("Preference updated.");
+  };
+
+  const saveAccount = async () => {
+    const nextName = displayName.trim() || viewer.name;
+    setProfileStatus("Saving account...");
+    const result = await onSaveProfile?.({ displayName: nextName, workspaceName });
+    setProfileStatus(result?.error ? result.error : "Account updated.");
+  };
+
+  const handleAvatarFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    const fileError = validateAvatarFile(file);
+    if (fileError) {
+      setProfileStatus(fileError);
+      return;
+    }
+
+    setIsAvatarUploading(true);
+    setProfileStatus("Uploading profile photo...");
+    const result = await onSaveAvatar?.(file);
+    setIsAvatarUploading(false);
+    setProfileStatus(result?.error ? result.error : "Profile photo updated.");
+  };
+
+  const removeAvatar = async () => {
+    setIsAvatarUploading(true);
+    setProfileStatus("Removing profile photo...");
+    const result = await onRemoveAvatar?.();
+    setIsAvatarUploading(false);
+    setProfileStatus(result?.error ? result.error : "Profile photo removed.");
+  };
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(viewer.email);
+      setProfileStatus("Email copied.");
+    } catch {
+      setProfileStatus("Could not copy email in this browser.");
+    }
+  };
+
+  const setThemeChoice = (nextTheme) => {
+    onSetTheme?.(nextTheme);
+    setProfileStatus(`${nextTheme === "dark" ? "Dark" : "Light"} mode applied.`);
+  };
+
+  const setMode = (mode) => {
+    setWorkingMode(mode);
+    setProfileStatus(`${mode} mode selected.`);
+  };
+
+  const quickAction = (message) => {
+    setProfileStatus(message);
+  };
+
+  const renderPanel = () => {
+    if (activePanel === "account") {
+      return (
+        <div className="profileActionPanel" aria-label="Account settings">
+          <div className="profilePanelTitle">
+            <strong>Account</strong>
+            <small>Keep the identity on your workspace clear.</small>
+          </div>
+          <div className="profileAvatarEditor">
+            <UserAvatar viewer={viewer} className="profileAvatarEditorImage" />
+            <div>
+              <strong>Profile photo</strong>
+              <small>JPG, PNG, WEBP, or GIF. Max 5MB.</small>
+              <div className="profileAvatarActions">
+                <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={isAvatarUploading}>
+                  <UserRound size={15} />
+                  {isAvatarUploading ? "Uploading..." : "Change photo"}
+                </button>
+                <button type="button" onClick={removeAvatar} disabled={isAvatarUploading || !viewer.avatarPath}>
+                  <Trash2 size={15} />
+                  Remove
+                </button>
+              </div>
+            </div>
+            <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarFile} />
+          </div>
+          <label className="profileField">
+            Display name
+            <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          </label>
+          <label className="profileField">
+            Workspace name
+            <input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} />
+          </label>
+          <div className="profileInfoLine">
+            <Mail size={14} />
+            <span>{viewer.email}</span>
+          </div>
+          <div className="profilePanelActions">
+            <button type="button" onClick={saveAccount}>
+              <Check size={15} />
+              Save
+            </button>
+            <button type="button" onClick={copyEmail}>
+              <Mail size={15} />
+              Copy email
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePanel === "settings") {
+      return (
+        <div className="profileActionPanel" aria-label="Workspace settings">
+          <div className="profilePanelTitle">
+            <strong>Settings</strong>
+            <small>Shape how Mark nudges your workday.</small>
+          </div>
+          <div className="profileModeGrid" aria-label="Working mode">
+            {["Calm", "Balanced", "Intense"].map((mode) => (
+              <button key={mode} className={workingMode === mode ? "active" : ""} type="button" onClick={() => setMode(mode)}>
+                {mode}
+              </button>
+            ))}
+          </div>
+          <ProfileSwitch
+            label="Smart reminders"
+            detail="Surface reminders around scheduled work."
+            checked={profilePrefs.smartReminders}
+            onChange={() => setPreference("smartReminders", !profilePrefs.smartReminders)}
+          />
+          <ProfileSwitch
+            label="Daily review"
+            detail="Show a closeout prompt near the end of the day."
+            checked={profilePrefs.dailyReview}
+            onChange={() => setPreference("dailyReview", !profilePrefs.dailyReview)}
+          />
+          <button className="profileWideAction" type="button" onClick={() => quickAction("Reminder test sent to your notification center.")}>
+            <Bell size={15} />
+            Test reminder
+          </button>
+        </div>
+      );
+    }
+
+    if (activePanel === "plan") {
+      return (
+        <div className="profileActionPanel" aria-label="Plan details">
+          <div className="profilePanelTitle">
+            <strong>Your plan</strong>
+            <small>{viewer.plan} is active. Billing can connect later.</small>
+          </div>
+          <div className="profilePlanMeter">
+            <div>
+              <span>Workspace usage</span>
+              <strong>36%</strong>
+            </div>
+            <ProgressBar value={36} color="blue" />
+          </div>
+          <div className="profilePlanGrid">
+            <span>Unlimited tasks</span>
+            <span>Calendar sync ready</span>
+            <span>Stripe plans later</span>
+          </div>
+          <div className="profilePanelActions">
+            <button type="button" onClick={() => quickAction("Plan comparison opened.")}>
+              <CreditCard size={15} />
+              Compare
+            </button>
+            <button type="button" onClick={() => quickAction("Billing will be available when Stripe is connected.")}>
+              <Settings2 size={15} />
+              Billing
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePanel === "privacy") {
+      return (
+        <div className="profileActionPanel" aria-label="Privacy controls">
+          <div className="profilePanelTitle">
+            <strong>Privacy</strong>
+            <small>Control what Mark can use for personalization.</small>
+          </div>
+          <ProfileSwitch
+            label="Private analytics"
+            detail="Only use your activity for your own insights."
+            checked={profilePrefs.privateAnalytics}
+            onChange={() => setPreference("privateAnalytics", !profilePrefs.privateAnalytics)}
+          />
+          <ProfileSwitch
+            label="Weekly email"
+            detail="Send a weekly summary to your account email."
+            checked={profilePrefs.weeklyEmail}
+            onChange={() => setPreference("weeklyEmail", !profilePrefs.weeklyEmail)}
+          />
+          <div className="profilePanelActions">
+            <button type="button" onClick={() => quickAction("Data export prepared for this workspace.")}>
+              <ShieldCheck size={15} />
+              Export data
+            </button>
+            <button type="button" onClick={() => quickAction("Security check complete.")}>
+              <CheckCircle2 size={15} />
+              Security check
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePanel === "shortcuts") {
+      return (
+        <div className="profileActionPanel" aria-label="Keyboard shortcuts">
+          <div className="profilePanelTitle">
+            <strong>Shortcuts</strong>
+            <small>Fast paths for moving around Mark.</small>
+          </div>
+          <ProfileSwitch
+            label="Command center"
+            detail="Keep shortcut hints available in the app."
+            checked={profilePrefs.commandCenter}
+            onChange={() => setPreference("commandCenter", !profilePrefs.commandCenter)}
+          />
+          <div className="profileShortcutList">
+            {shortcuts.map(([label, keys]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <kbd>{keys}</kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="profileActionPanel" aria-label="Appearance settings">
+        <div className="profilePanelTitle">
+          <strong>Appearance</strong>
+          <small>Choose the visual mode for your workspace.</small>
+        </div>
+        <div className="profileThemeGrid">
+          <button className={!isDark ? "active" : ""} type="button" onClick={() => setThemeChoice("light")}>
+            <Sun size={16} />
+            Light
+          </button>
+          <button className={isDark ? "active" : ""} type="button" onClick={() => setThemeChoice("dark")}>
+            <Moon size={16} />
+            Dark
+          </button>
+        </div>
+        <p className="profileFinePrint">Dark mode keeps the same Mark layout with calmer contrast for long work sessions.</p>
+      </div>
+    );
+  };
+
   return (
-    <div className="topbarActionSlot profileMenuSlot">
+    <div className="topbarActionSlot profileMenuSlot" ref={menuRef}>
       <button
         className="profileButton"
         type="button"
@@ -1811,15 +2335,13 @@ function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
         title="Open profile menu"
         onClick={() => setIsOpen((current) => !current)}
       >
-        <span className="profileAvatar profileAvatarButton" aria-hidden="true">
-          <UserRound size={17} />
-        </span>
+        <UserAvatar viewer={viewer} className="profileAvatarButton" />
       </button>
 
       {isOpen ? (
         <div className="topbarPopover profilePopover" role="dialog" aria-label="Profile menu">
           <div className="profilePopoverHeader">
-            <span className="profileAvatar large" aria-hidden="true">{viewer.initials}</span>
+            <UserAvatar viewer={viewer} large />
             <div>
               <strong>{viewer.name}</strong>
               <small>{viewer.email}</small>
@@ -1831,7 +2353,7 @@ function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
             {profileItems.map((item) => {
               const ItemIcon = item.icon;
               return (
-                <button key={item.label} type="button" onClick={() => setIsOpen(false)}>
+                <button key={item.label} className={activePanel === item.id ? "active" : ""} type="button" onClick={() => openPanel(item.id)}>
                   <ItemIcon size={16} />
                   <span>
                     <strong>{item.label}</strong>
@@ -1842,7 +2364,24 @@ function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
             })}
           </div>
 
-          <button className="profileThemeToggle" type="button" aria-pressed={isDark} onClick={onToggleTheme}>
+          {renderPanel()}
+
+          {profileStatus ? (
+            <p className="profileStatusLine" role="status">
+              <CheckCircle2 size={14} />
+              {profileStatus}
+            </p>
+          ) : null}
+
+          <button
+            className="profileThemeToggle"
+            type="button"
+            aria-pressed={isDark}
+            onClick={() => {
+              onToggleTheme();
+              setProfileStatus(isDark ? "Light mode applied." : "Dark mode applied.");
+            }}
+          >
             <span>
               {isDark ? <Moon size={16} /> : <Sun size={16} />}
               <strong>Appearance</strong>
@@ -1851,7 +2390,7 @@ function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
           </button>
 
           <div className="profileMenuFooter">
-            <button type="button" onClick={() => setIsOpen(false)}>
+            <button type="button" onClick={() => openPanel("appearance")}>
               <Palette size={15} />
               Theme
             </button>
@@ -1866,7 +2405,34 @@ function ProfileMenu({ theme, onToggleTheme, viewer, onSignOut }) {
   );
 }
 
-function Header({ activeNav, setActiveNav, tasks, goals, reminders, onAddTask, theme, onToggleTheme, viewer, onSignOut }) {
+function ProfileSwitch({ label, detail, checked, onChange }) {
+  return (
+    <button className="profileSwitch" type="button" role="switch" aria-checked={checked} onClick={onChange}>
+      <span>
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </span>
+      <i aria-hidden="true" />
+    </button>
+  );
+}
+
+function Header({
+  activeNav,
+  setActiveNav,
+  tasks,
+  goals,
+  reminders,
+  onAddTask,
+  theme,
+  onToggleTheme,
+  onSetTheme,
+  viewer,
+  onSignOut,
+  onSaveProfile,
+  onSaveAvatar,
+  onRemoveAvatar,
+}) {
   const [headerDate, setHeaderDate] = useState(() => getToday());
   const [openPopover, setOpenPopover] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1995,7 +2561,16 @@ function Header({ activeNav, setActiveNav, tasks, goals, reminders, onAddTask, t
           <Plus size={18} />
           Add / Schedule
         </button>
-        <ProfileMenu theme={theme} onToggleTheme={onToggleTheme} viewer={viewer} onSignOut={onSignOut} />
+        <ProfileMenu
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onSetTheme={onSetTheme}
+          viewer={viewer}
+          onSignOut={onSignOut}
+          onSaveProfile={onSaveProfile}
+          onSaveAvatar={onSaveAvatar}
+          onRemoveAvatar={onRemoveAvatar}
+        />
       </div>
     </header>
   );
@@ -2581,6 +3156,12 @@ function CalendarToolbar({
   onAddTask,
   theme,
   onToggleTheme,
+  onSetTheme,
+  viewer,
+  onSignOut,
+  onSaveProfile,
+  onSaveAvatar,
+  onRemoveAvatar,
 }) {
   const calendarTitle = calendarMode === "Day" ? fullDateFormatter.format(selectedDate) : monthYearFormatter.format(selectedDate);
   const calendarSubtitle = calendarMode === "Day" ? "Daily schedule" : `Week of ${formatWeekRange(weekStart)}`;
@@ -2619,7 +3200,16 @@ function CalendarToolbar({
             <Plus size={17} />
             Create
           </button>
-          <ProfileMenu theme={theme} onToggleTheme={onToggleTheme} />
+          <ProfileMenu
+            theme={theme}
+            onToggleTheme={onToggleTheme}
+            onSetTheme={onSetTheme}
+            viewer={viewer}
+            onSignOut={onSignOut}
+            onSaveProfile={onSaveProfile}
+            onSaveAvatar={onSaveAvatar}
+            onRemoveAvatar={onRemoveAvatar}
+          />
         </div>
       </div>
 
@@ -2996,6 +3586,12 @@ function CalendarView({
   onAddTask,
   theme,
   onToggleTheme,
+  onSetTheme,
+  viewer,
+  onSignOut,
+  onSaveProfile,
+  onSaveAvatar,
+  onRemoveAvatar,
 }) {
   const [selectedDate, setSelectedDate] = useState(() => getToday());
   const [calendarMode, setCalendarMode] = useState("Week");
@@ -3043,6 +3639,12 @@ function CalendarView({
         onAddTask={onAddTask}
         theme={theme}
         onToggleTheme={onToggleTheme}
+        onSetTheme={onSetTheme}
+        viewer={viewer}
+        onSignOut={onSignOut}
+        onSaveProfile={onSaveProfile}
+        onSaveAvatar={onSaveAvatar}
+        onRemoveAvatar={onRemoveAvatar}
       />
       <CalendarBoard
         tasks={tasks}
@@ -3765,13 +4367,7 @@ function CheckInsView({ checkIns, setCheckIns, tasks, goals, habits }) {
           <div className="checkInFormGrid">
             <label>
               Focus time
-              <select value={focusTime} onChange={(event) => setFocusTime(event.target.value)}>
-                {checkInFocusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <MarkSelect label="Focus time" value={focusTime} onChange={setFocusTime} options={checkInFocusOptions} />
             </label>
             <fieldset className="energySelector">
               <legend>Energy</legend>
@@ -3794,36 +4390,54 @@ function CheckInsView({ checkIns, setCheckIns, tasks, goals, habits }) {
           <div className="checkInFormGrid">
             <label>
               Linked task
-              <select value={linkedTaskId} onChange={(event) => selectTask(event.target.value)}>
-                <option value="">No task</option>
-                {openTasks.map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.title}
-                  </option>
-                ))}
-              </select>
+              <MarkSelect
+                label="Linked task"
+                value={linkedTaskId}
+                onChange={selectTask}
+                options={[
+                  { value: "", label: "No task", detail: "Keep independent" },
+                  ...openTasks.map((task) => ({
+                    value: String(task.id),
+                    label: task.title,
+                    detail: `${task.project} - ${task.start} to ${task.end}`,
+                  })),
+                ]}
+              />
             </label>
             <label>
               Linked goal
-              <select value={linkedGoalId} onChange={(event) => setLinkedGoalId(event.target.value)}>
-                <option value="">No goal</option>
-                {goals.map((goal) => (
-                  <option key={goal.id} value={goal.id}>
-                    {goal.label}
-                  </option>
-                ))}
-              </select>
+              <MarkSelect
+                label="Linked goal"
+                value={linkedGoalId}
+                onChange={setLinkedGoalId}
+                options={[
+                  { value: "", label: "No goal", detail: "General reflection" },
+                  ...goals.map((goal) => {
+                    const meta = getGoalMeta(goal);
+                    return {
+                      value: String(goal.id),
+                      label: goal.label,
+                      detail: `${meta.cadence} - ${goal.progress}%`,
+                    };
+                  }),
+                ]}
+              />
             </label>
             <label>
               Linked habit
-              <select value={linkedHabitId} onChange={(event) => setLinkedHabitId(event.target.value)}>
-                <option value="">No habit</option>
-                {habits.map((habit) => (
-                  <option key={habit.id} value={habit.id}>
-                    {habit.name}
-                  </option>
-                ))}
-              </select>
+              <MarkSelect
+                label="Linked habit"
+                value={linkedHabitId}
+                onChange={setLinkedHabitId}
+                options={[
+                  { value: "", label: "No habit", detail: "No habit link" },
+                  ...habits.map((habit) => ({
+                    value: String(habit.id),
+                    label: habit.name,
+                    detail: `${habit.streak} day streak`,
+                  })),
+                ]}
+              />
             </label>
           </div>
 
@@ -3909,6 +4523,12 @@ function MainContent({
   onToggleHabit,
   theme,
   onToggleTheme,
+  onSetTheme,
+  viewer,
+  onSignOut,
+  onSaveProfile,
+  onSaveAvatar,
+  onRemoveAvatar,
   focusTimer,
   onToggleFocusTimer,
   onResetFocusTimer,
@@ -3929,6 +4549,12 @@ function MainContent({
         onAddTask={onAddTask}
         theme={theme}
         onToggleTheme={onToggleTheme}
+        onSetTheme={onSetTheme}
+        viewer={viewer}
+        onSignOut={onSignOut}
+        onSaveProfile={onSaveProfile}
+        onSaveAvatar={onSaveAvatar}
+        onRemoveAvatar={onRemoveAvatar}
       />
     );
   }
@@ -4132,54 +4758,62 @@ function ScheduleDialog({ open, onClose, onCreate, goals, habits, draft }) {
         <div className="formGrid">
           <label>
             Priority
-            <select value={priority} onChange={(event) => setPriority(event.target.value)}>
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
-            </select>
+            <MarkSelect label="Priority" value={priority} onChange={setPriority} options={taskPriorityOptions} />
           </label>
           <label>
             Category
-            <select value={category} onChange={(event) => setCategory(event.target.value)}>
-              {["Focus", "Planning", "Routine", "Meeting", "Creation", "Health", "Study", "Review", "Operations"].map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
+            <MarkSelect label="Category" value={category} onChange={setCategory} options={taskCategoryOptions} />
           </label>
         </div>
         <div className="formGrid">
           <label>
             Linked goal
-            <select value={linkedGoalId} onChange={(event) => selectGoal(event.target.value)}>
-              <option value="">No goal</option>
-              {goals.map((goal) => (
-                <option key={goal.id} value={goal.id}>
-                  {goal.label}
-                </option>
-              ))}
-            </select>
+            <MarkSelect
+              label="Linked goal"
+              value={linkedGoalId}
+              onChange={selectGoal}
+              options={[
+                { value: "", label: "No goal", detail: "Standalone task" },
+                ...goals.map((goal) => {
+                  const meta = getGoalMeta(goal);
+                  return {
+                    value: String(goal.id),
+                    label: goal.label,
+                    detail: `${meta.linkedProject} - ${goal.progress}%`,
+                  };
+                }),
+              ]}
+            />
           </label>
           <label>
             Linked habit
-            <select value={linkedHabitId} onChange={(event) => setLinkedHabitId(event.target.value)}>
-              <option value="">No habit</option>
-              {habits.map((habit) => (
-                <option key={habit.id} value={habit.id}>
-                  {habit.name}
-                </option>
-              ))}
-            </select>
+            <MarkSelect
+              label="Linked habit"
+              value={linkedHabitId}
+              onChange={setLinkedHabitId}
+              options={[
+                { value: "", label: "No habit", detail: "No habit link" },
+                ...habits.map((habit) => ({
+                  value: String(habit.id),
+                  label: habit.name,
+                  detail: `${habit.streak} day streak`,
+                })),
+              ]}
+            />
           </label>
         </div>
         <label>
           Linked area
-          <select value={project} onChange={(event) => setProject(event.target.value)}>
-            {projectOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <MarkSelect
+            label="Linked area"
+            value={project}
+            onChange={setProject}
+            options={projectOptions.map((option) => ({
+              value: option,
+              label: option,
+              detail: option === "Other" ? "Custom area" : "Workspace area",
+            }))}
+          />
         </label>
         <label>
           Notes
@@ -4321,13 +4955,16 @@ function GoalDialog({ open, onClose, onCreate }) {
           </label>
           <label>
             Linked area
-            <select value={project} onChange={(event) => setProject(event.target.value)}>
-              {linkedAreaOptions.map((area) => (
-                <option key={area} value={area}>
-                  {area}
-                </option>
-              ))}
-            </select>
+            <MarkSelect
+              label="Linked area"
+              value={project}
+              onChange={setProject}
+              options={linkedAreaOptions.map((area) => ({
+                value: area,
+                label: area,
+                detail: area === "Other" ? "Write your own" : "Goal area",
+              }))}
+            />
           </label>
           {project === "Other" ? (
             <label>
@@ -4744,6 +5381,111 @@ export function App() {
     }
   };
 
+  const saveViewerProfile = async ({ displayName }) => {
+    const nextName = displayName.trim() || viewer.name;
+    setViewer((current) => ({
+      ...current,
+      name: nextName,
+      initials: getInitials(nextName, current.email),
+    }));
+
+    if (!authUser) return { ok: true };
+
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        user_id: authUser.id,
+        display_name: nextName,
+        onboarding_profile: onboardingProfile,
+        theme,
+        timezone,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (error) {
+      setWorkspaceError(error.message);
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true };
+  };
+
+  const saveViewerAvatar = async (file) => {
+    const fileError = validateAvatarFile(file);
+    if (fileError) return { ok: false, error: fileError };
+    if (!authUser) return { ok: false, error: "Sign in to change your profile photo." };
+
+    const uploadResult = await uploadAvatar({ userId: authUser.id, file, pathPrefix: "profile" });
+    if (uploadResult.error) {
+      setWorkspaceError(uploadResult.error.message);
+      return { ok: false, error: uploadResult.error.message };
+    }
+
+    const avatarPath = uploadResult.data?.path ?? uploadResult.data?.fullPath?.replace(/^mark-avatars\//, "");
+    if (!avatarPath) return { ok: false, error: "Could not save the uploaded photo path." };
+
+    const avatarUrl = uploadResult.publicUrl || getAvatarPublicUrl(avatarPath);
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        user_id: authUser.id,
+        display_name: viewer.name === "there" ? null : viewer.name,
+        avatar_path: avatarPath,
+        onboarding_profile: onboardingProfile,
+        theme,
+        timezone,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (error) {
+      setWorkspaceError(error.message);
+      return { ok: false, error: error.message };
+    }
+
+    setViewer((current) => ({
+      ...current,
+      avatarPath,
+      avatarUrl,
+    }));
+
+    return { ok: true };
+  };
+
+  const removeViewerAvatar = async () => {
+    if (!authUser) return { ok: false, error: "Sign in to change your profile photo." };
+
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        user_id: authUser.id,
+        display_name: viewer.name === "there" ? null : viewer.name,
+        avatar_path: null,
+        onboarding_profile: onboardingProfile,
+        theme,
+        timezone,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (error) {
+      setWorkspaceError(error.message);
+      return { ok: false, error: error.message };
+    }
+
+    setViewer((current) => ({
+      ...current,
+      avatarPath: "",
+      avatarUrl: getUserMetadataAvatar(authUser),
+    }));
+
+    return { ok: true };
+  };
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -4917,8 +5659,12 @@ export function App() {
             onAddTask={() => openTaskDialog()}
             theme={theme}
             onToggleTheme={toggleTheme}
+            onSetTheme={setTheme}
             viewer={viewer}
             onSignOut={handleSignOut}
+            onSaveProfile={saveViewerProfile}
+            onSaveAvatar={saveViewerAvatar}
+            onRemoveAvatar={removeViewerAvatar}
           />
         ) : null}
         {workspaceError ? <div className="workspaceNotice" role="alert">{workspaceError}</div> : null}
@@ -4945,6 +5691,12 @@ export function App() {
           onToggleHabit={toggleHabit}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onSetTheme={setTheme}
+          viewer={viewer}
+          onSignOut={handleSignOut}
+          onSaveProfile={saveViewerProfile}
+          onSaveAvatar={saveViewerAvatar}
+          onRemoveAvatar={removeViewerAvatar}
           focusTimer={focusTimer}
           onToggleFocusTimer={toggleFocusTimer}
           onResetFocusTimer={resetFocusTimer}

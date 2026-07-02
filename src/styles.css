@@ -68,6 +68,178 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+.markSelect {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.markSelect.open {
+  z-index: 120;
+}
+
+.markSelectTrigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  width: 100%;
+  padding: 7px 10px 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
+    #fff;
+  color: #101828;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 1px 2px rgba(16, 24, 40, 0.04);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.markSelectTrigger:hover,
+.markSelect.open .markSelectTrigger {
+  border-color: #b2c7ff;
+  background:
+    linear-gradient(180deg, #ffffff, #f6f8ff),
+    #fff;
+  box-shadow:
+    0 0 0 4px rgba(21, 94, 239, 0.08),
+    0 12px 26px rgba(16, 24, 40, 0.08);
+}
+
+.markSelectTrigger:focus-visible {
+  outline: 3px solid rgba(21, 94, 239, 0.18);
+  outline-offset: 2px;
+}
+
+.markSelectTriggerText,
+.markSelectOption span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-align: left;
+}
+
+.markSelectValue,
+.markSelectOption strong {
+  overflow: hidden;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 730;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markSelectValue.placeholder {
+  color: var(--muted);
+}
+
+.markSelectTriggerText small,
+.markSelectOption small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markSelectChevron {
+  color: #667085;
+  transition: color 160ms ease, transform 180ms ease;
+}
+
+.markSelect.open .markSelectChevron {
+  color: var(--blue);
+  transform: rotate(180deg);
+}
+
+.markSelectMenu {
+  position: fixed;
+  z-index: 160;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  overflow: auto;
+  border: 1px solid rgba(199, 210, 226, 0.92);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
+    #fff;
+  box-shadow:
+    0 24px 54px rgba(16, 24, 40, 0.18),
+    0 6px 18px rgba(21, 94, 239, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform-origin: var(--select-origin, top);
+  animation: markSelectMenuIn 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.markSelectOption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #1d2939;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.markSelectOption:hover,
+.markSelectOption:focus-visible,
+.markSelectOption.selected {
+  background:
+    linear-gradient(180deg, rgba(239, 244, 255, 0.95), rgba(232, 240, 255, 0.95)),
+    #eff4ff;
+  color: #0f3fc5;
+}
+
+.markSelectOption:hover {
+  transform: translateY(-1px);
+}
+
+.markSelectCheck {
+  justify-self: end;
+  color: var(--blue);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.markSelectOption.selected .markSelectCheck {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@keyframes markSelectMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 #root {
   min-height: 100vh;
 }
@@ -127,6 +299,65 @@ textarea:focus-visible {
 .darkTheme :is(.profileButton:hover, .profileButton[aria-expanded="true"], .popoverList button:hover, .profileMenuList button:hover, .profileMenuFooter button:hover, .calendarBoardHeader button.selected) {
   border-color: #3d5a8b;
   background: #182235;
+}
+
+.darkTheme .markSelectTrigger {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+    #111827;
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.darkTheme .markSelectTrigger:hover,
+.darkTheme .markSelect.open .markSelectTrigger {
+  border-color: #4f70a8;
+  background:
+    linear-gradient(180deg, rgba(110, 168, 255, 0.11), rgba(255, 255, 255, 0.025)),
+    #162033;
+  box-shadow:
+    0 0 0 4px rgba(110, 168, 255, 0.08),
+    0 14px 30px rgba(0, 0, 0, 0.32);
+}
+
+.darkTheme .markSelectChevron {
+  color: #9aa9c0;
+}
+
+.darkTheme .markSelectTriggerText small,
+.darkTheme .markSelectOption small {
+  color: #9aa9c0;
+}
+
+.darkTheme .markSelectMenu {
+  border-color: rgba(148, 163, 184, 0.26);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    #0f1724;
+  box-shadow:
+    0 26px 64px rgba(0, 0, 0, 0.48),
+    0 10px 28px rgba(27, 80, 170, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.darkTheme .markSelectOption {
+  color: #edf4ff;
+}
+
+.darkTheme .markSelectOption:hover,
+.darkTheme .markSelectOption:focus-visible,
+.darkTheme .markSelectOption.selected {
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.22), rgba(91, 140, 255, 0.12)),
+    #17243a;
+  color: #f8fbff;
+}
+
+.darkTheme .markSelectCheck {
+  color: #9cc3ff;
 }
 
 .darkTheme .calendarDayLane {
@@ -2474,6 +2705,7 @@ textarea:focus-visible {
   font-size: 11px;
   font-weight: 820;
   box-shadow: 0 8px 18px rgba(21, 94, 239, 0.18);
+  overflow: hidden;
 }
 
 .profileAvatar.large {
@@ -2482,8 +2714,28 @@ textarea:focus-visible {
   font-size: 13px;
 }
 
+.profileAvatar.hasImage {
+  background: #eef4ff;
+  color: transparent;
+}
+
+.profileAvatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.profileCardAvatar {
+  width: 38px;
+  height: 38px;
+}
+
 .profilePopover {
-  width: min(330px, calc(100vw - 36px));
+  width: min(390px, calc(100vw - 36px));
+  max-height: min(720px, calc(100vh - 96px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 10px;
 }
 
@@ -2557,9 +2809,18 @@ textarea:focus-visible {
 }
 
 .profileMenuList button:hover,
+.profileMenuList button.active,
 .profileMenuFooter button:hover {
   border-color: var(--border);
   background: #f7f9fc;
+}
+
+.profileMenuList button.active {
+  border-color: #b2c7ff;
+  background:
+    linear-gradient(180deg, rgba(239, 244, 255, 0.95), rgba(247, 249, 255, 0.95)),
+    #eff4ff;
+  box-shadow: 0 8px 22px rgba(21, 94, 239, 0.08);
 }
 
 .profileMenuList svg,
@@ -2631,6 +2892,379 @@ textarea:focus-visible {
 .profileThemeToggle[aria-pressed="true"] strong,
 .profileThemeToggle[aria-pressed="true"] svg {
   color: white;
+}
+
+.profileActionPanel {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+    #fff;
+  box-shadow:
+    0 10px 24px rgba(16, 24, 40, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.profilePanelTitle {
+  display: grid;
+  gap: 2px;
+}
+
+.profilePanelTitle strong {
+  color: #101828;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.profilePanelTitle small,
+.profileFinePrint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.profileFinePrint {
+  margin: 0;
+}
+
+.profileAvatarEditor {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(239, 244, 255, 0.78), rgba(248, 250, 252, 0.96)),
+    #f8fbff;
+}
+
+.profileAvatarEditor input[type="file"] {
+  display: none;
+}
+
+.profileAvatarEditorImage {
+  width: 58px;
+  height: 58px;
+  border-width: 3px;
+  font-size: 17px;
+  box-shadow:
+    0 14px 28px rgba(21, 94, 239, 0.16),
+    0 0 0 1px rgba(178, 199, 255, 0.5);
+}
+
+.profileAvatarEditor strong,
+.profileAvatarEditor small {
+  display: block;
+}
+
+.profileAvatarEditor strong {
+  color: #101828;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.profileAvatarEditor small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.profileAvatarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.profileAvatarActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.profileAvatarActions button:hover:not(:disabled) {
+  border-color: #b2c7ff;
+  background: #eff4ff;
+  color: #0f3fc5;
+  box-shadow: 0 8px 18px rgba(21, 94, 239, 0.08);
+  transform: translateY(-1px);
+}
+
+.profileAvatarActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.profileField {
+  display: grid;
+  gap: 6px;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.profileField input {
+  min-height: 38px;
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: #fff;
+  color: #101828;
+}
+
+.profileInfoLine {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #f7f9fc;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.profileInfoLine span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileInfoLine svg {
+  color: var(--blue);
+}
+
+.profilePanelActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profilePanelActions button,
+.profileWideAction,
+.profileThemeGrid button,
+.profileModeGrid button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.profilePanelActions button:hover,
+.profileWideAction:hover,
+.profileThemeGrid button:hover,
+.profileThemeGrid button.active,
+.profileModeGrid button:hover,
+.profileModeGrid button.active {
+  border-color: #b2c7ff;
+  background: #eff4ff;
+  color: #0f3fc5;
+  box-shadow: 0 8px 18px rgba(21, 94, 239, 0.08);
+  transform: translateY(-1px);
+}
+
+.profilePanelActions svg,
+.profileWideAction svg {
+  color: var(--blue);
+}
+
+.profileModeGrid,
+.profileThemeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.profileThemeGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profileSwitch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fbfcff;
+  color: #344054;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profileSwitch strong,
+.profileSwitch small {
+  display: block;
+}
+
+.profileSwitch strong {
+  color: #101828;
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.profileSwitch small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.profileSwitch i {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: #d0d5dd;
+  transition: background 160ms ease;
+}
+
+.profileSwitch i::before {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.18);
+  content: "";
+  transition: transform 180ms ease;
+}
+
+.profileSwitch[aria-checked="true"] {
+  border-color: #b2c7ff;
+  background: #f4f7ff;
+}
+
+.profileSwitch[aria-checked="true"] i {
+  background: var(--blue);
+}
+
+.profileSwitch[aria-checked="true"] i::before {
+  transform: translateX(16px);
+}
+
+.profilePlanMeter {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f7f9fc;
+}
+
+.profilePlanMeter > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.profilePlanMeter strong {
+  color: #101828;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.profilePlanGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.profilePlanGrid span {
+  min-height: 34px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: #475467;
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.profileShortcutList {
+  display: grid;
+  gap: 6px;
+}
+
+.profileShortcutList div {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fbfcff;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.profileShortcutList kbd {
+  min-width: 40px;
+  padding: 4px 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: #fff;
+  color: #101828;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profileStatusLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0 9px;
+  border: 1px solid #bbf7d0;
+  border-radius: 9px;
+  background: #f0fdf4;
+  color: #027a48;
+  font-size: 12px;
+  font-weight: 760;
 }
 
 .profileMenuFooter {
@@ -6975,6 +7609,88 @@ html[data-theme="dark"] body {
   box-shadow: 0 0 0 1px rgba(110, 168, 255, 0.1) inset;
 }
 
+.darkTheme .profileMenuList button.active,
+.darkTheme .profileMenuList button.active:hover {
+  border-color: rgba(110, 168, 255, 0.48);
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.22), rgba(91, 140, 255, 0.1)),
+    #101a2c;
+  color: #e8f1ff;
+  box-shadow: 0 0 0 1px rgba(110, 168, 255, 0.1) inset;
+}
+
+.darkTheme .profileActionPanel,
+.darkTheme .profileAvatarEditor,
+.darkTheme .profilePlanMeter,
+.darkTheme .profileInfoLine,
+.darkTheme .profileShortcutList div {
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.014)),
+    var(--surface-inset);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.darkTheme :is(.profilePanelTitle strong, .profileField, .profileSwitch strong, .profilePlanMeter strong, .profileShortcutList kbd) {
+  color: var(--text);
+}
+
+.darkTheme .profileAvatarEditorImage {
+  box-shadow:
+    0 16px 30px rgba(91, 140, 255, 0.18),
+    0 0 0 1px rgba(110, 168, 255, 0.2);
+}
+
+.darkTheme .profileAvatarEditor strong {
+  color: var(--text);
+}
+
+.darkTheme .profileAvatarEditor small {
+  color: var(--muted);
+}
+
+.darkTheme :is(.profilePanelTitle small, .profileFinePrint, .profileSwitch small, .profileInfoLine, .profilePlanMeter > div, .profileShortcutList div) {
+  color: var(--muted);
+}
+
+.darkTheme .profileField input,
+.darkTheme .profileShortcutList kbd,
+.darkTheme .profilePanelActions button,
+.darkTheme .profileAvatarActions button,
+.darkTheme .profileWideAction,
+.darkTheme .profileThemeGrid button,
+.darkTheme .profileModeGrid button,
+.darkTheme .profilePlanGrid span,
+.darkTheme .profileSwitch {
+  border-color: var(--border);
+  background: var(--surface-inset);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.darkTheme :is(.profilePanelActions button:hover, .profileAvatarActions button:hover:not(:disabled), .profileWideAction:hover, .profileThemeGrid button:hover, .profileThemeGrid button.active, .profileModeGrid button:hover, .profileModeGrid button.active, .profileSwitch[aria-checked="true"]) {
+  border-color: rgba(110, 168, 255, 0.44);
+  background:
+    linear-gradient(180deg, rgba(91, 140, 255, 0.2), rgba(91, 140, 255, 0.1)),
+    #101a2c;
+  color: #e8f1ff;
+}
+
+.darkTheme .profileSwitch i {
+  background: #334155;
+}
+
+.darkTheme .profileSwitch[aria-checked="true"] i {
+  background: var(--blue);
+}
+
+.darkTheme .profileStatusLine {
+  border-color: rgba(55, 217, 158, 0.32);
+  background: rgba(55, 217, 158, 0.1);
+  color: #94f2ca;
+}
+
 .darkTheme .brand {
   color: #f7f9ff;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -7808,7 +8524,12 @@ html[data-theme="dark"] body {
   .loadingCard,
   .loadingMark,
   .loadingTrace span,
-  .loadingGrid span {
+  .loadingGrid span,
+  .markSelectTrigger,
+  .markSelectChevron,
+  .markSelectMenu,
+  .markSelectOption,
+  .markSelectCheck {
     animation: none;
     transition: none;
   }
