@@ -2461,6 +2461,22 @@ textarea:focus-visible {
   overflow: hidden;
 }
 
+.sectionTransition {
+  min-width: 0;
+  transform-origin: 50% 18px;
+}
+
+.sectionTransition > * {
+  min-width: 0;
+}
+
+.mainSurface.calendarMode .sectionTransition {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+
 .topbar {
   justify-content: space-between;
   gap: 20px;
@@ -8496,6 +8512,28 @@ html[data-theme="dark"] body {
     animation: proofSheen 5.4s ease-in-out infinite;
   }
 
+  @keyframes sectionViewIn {
+    0% {
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateY(12px) scale(0.992);
+    }
+
+    58% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .sectionTransition {
+    animation: sectionViewIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   .calendarBlock,
   .taskRow,
   .primaryButton,
@@ -8529,7 +8567,8 @@ html[data-theme="dark"] body {
   .markSelectChevron,
   .markSelectMenu,
   .markSelectOption,
-  .markSelectCheck {
+  .markSelectCheck,
+  .sectionTransition {
     animation: none;
     transition: none;
   }

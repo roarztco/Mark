@@ -4536,8 +4536,10 @@ function MainContent({
   onSelectFocusPreset,
   onEndFocusSession,
 }) {
+  let content;
+
   if (activeNav === "Calendar") {
-    return (
+    content = (
       <CalendarView
         tasks={tasks}
         setTasks={setTasks}
@@ -4557,10 +4559,8 @@ function MainContent({
         onRemoveAvatar={onRemoveAvatar}
       />
     );
-  }
-
-  if (activeNav === "Tasks") {
-    return (
+  } else if (activeNav === "Tasks") {
+    content = (
       <TasksView
         tasks={tasks}
         inbox={inbox}
@@ -4571,14 +4571,10 @@ function MainContent({
         onAddTask={onAddTask}
       />
     );
-  }
-
-  if (activeNav === "Goals") {
-    return <GoalsView goals={goals} tasks={tasks} habits={habits} onAddGoal={onAddGoal} onScheduleGoal={onScheduleGoal} />;
-  }
-
-  if (activeNav === "Focus") {
-    return (
+  } else if (activeNav === "Goals") {
+    content = <GoalsView goals={goals} tasks={tasks} habits={habits} onAddGoal={onAddGoal} onScheduleGoal={onScheduleGoal} />;
+  } else if (activeNav === "Focus") {
+    content = (
       <FocusView
         tasks={tasks}
         reminders={reminders}
@@ -4595,39 +4591,39 @@ function MainContent({
         onEndFocusSession={onEndFocusSession}
       />
     );
-  }
-
-  if (activeNav === "Habits") {
-    return <HabitsView habits={habits} onToggleHabit={onToggleHabit} onScheduleHabit={onScheduleHabit} />;
-  }
-
-  if (activeNav === "Analytics") {
-    return <AnalyticsView tasks={tasks} goals={goals} habits={habits} checkIns={checkIns} stats={stats} />;
-  }
-
-  if (activeNav === "Check-ins") {
-    return <CheckInsView checkIns={checkIns} setCheckIns={setCheckIns} tasks={tasks} goals={goals} habits={habits} />;
+  } else if (activeNav === "Habits") {
+    content = <HabitsView habits={habits} onToggleHabit={onToggleHabit} onScheduleHabit={onScheduleHabit} />;
+  } else if (activeNav === "Analytics") {
+    content = <AnalyticsView tasks={tasks} goals={goals} habits={habits} checkIns={checkIns} stats={stats} />;
+  } else if (activeNav === "Check-ins") {
+    content = <CheckInsView checkIns={checkIns} setCheckIns={setCheckIns} tasks={tasks} goals={goals} habits={habits} />;
+  } else {
+    content = (
+      <OverviewView
+        tasks={tasks}
+        inbox={inbox}
+        goals={goals}
+        habits={habits}
+        reminders={reminders}
+        setReminders={setReminders}
+        checkIns={checkIns}
+        selectedTaskId={selectedTaskId}
+        setSelectedTaskId={setSelectedTaskId}
+        setTasks={setTasks}
+        onAddTask={onAddTask}
+        stats={stats}
+        focusTimer={focusTimer}
+        onToggleFocusTimer={onToggleFocusTimer}
+        onResetFocusTimer={onResetFocusTimer}
+        onEndFocusSession={onEndFocusSession}
+      />
+    );
   }
 
   return (
-    <OverviewView
-      tasks={tasks}
-      inbox={inbox}
-      goals={goals}
-      habits={habits}
-      reminders={reminders}
-      setReminders={setReminders}
-      checkIns={checkIns}
-      selectedTaskId={selectedTaskId}
-      setSelectedTaskId={setSelectedTaskId}
-      setTasks={setTasks}
-      onAddTask={onAddTask}
-      stats={stats}
-      focusTimer={focusTimer}
-      onToggleFocusTimer={onToggleFocusTimer}
-      onResetFocusTimer={onResetFocusTimer}
-      onEndFocusSession={onEndFocusSession}
-    />
+    <div key={activeNav} className="sectionTransition" data-section={activeNav}>
+      {content}
+    </div>
   );
 }
 
