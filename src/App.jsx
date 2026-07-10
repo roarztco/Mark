@@ -27,6 +27,8 @@ import {
   Moon,
   MoreHorizontal,
   Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pause,
   Play,
   Plus,
@@ -66,6 +68,9 @@ const routeMap = {
   onboarding: "#/onboarding",
   app: "#/app",
 };
+
+const markLogoSrc = "/brand/mark-logo.png";
+const markLogoIconSrc = "/brand/mark-logo-icon.png";
 
 const onboardingOptions = [
   {
@@ -1227,8 +1232,7 @@ function buildWorkspaceAnalytics(tasks, habits, goals, checkIns) {
 function AppLogo() {
   return (
     <div className="brand" aria-label="Mark productivity web app">
-      <div className="brandMark">M</div>
-      <span>Mark</span>
+      <img className="brandLogo" src={markLogoSrc} alt="" draggable="false" />
     </div>
   );
 }
@@ -1910,8 +1914,8 @@ function Sidebar({ goals, inbox, activeNav, setActiveNav, onAddTask, onAddGoal, 
     <aside className="sidebar">
       <div className="sidebarHeader">
         <AppLogo />
-        <IconButton label="Collapse sidebar" onClick={onCollapse}>
-          <ChevronLeft size={18} />
+        <IconButton label="Collapse sidebar" className="sidebarCollapseButton" onClick={onCollapse}>
+          <PanelLeftClose size={18} />
         </IconButton>
       </div>
 
@@ -2471,6 +2475,27 @@ function Header({
   const togglePopover = (panel) => {
     setOpenPopover((current) => (current === panel ? null : panel));
   };
+
+  useEffect(() => {
+    if (!openPopover) return undefined;
+
+    const closeOnPointerDown = (event) => {
+      if (event.target.closest(".topbarActionSlot:not(.profileMenuSlot)")) return;
+      setOpenPopover(null);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpenPopover(null);
+    };
+
+    document.addEventListener("pointerdown", closeOnPointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnPointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openPopover]);
 
   const openResult = (nav) => {
     setActiveNav(nav);
@@ -4676,12 +4701,26 @@ function ScheduleDialog({ open, onClose, onCreate, goals, habits, draft }) {
     setNotes(draft.notes ?? "");
   }, [open, draft]);
 
-  if (!open) return null;
-
   const close = () => {
     resetForm();
     onClose();
   };
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") close();
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
 
   const selectGoal = (value) => {
     setLinkedGoalId(value);
@@ -4722,7 +4761,7 @@ function ScheduleDialog({ open, onClose, onCreate, goals, habits, draft }) {
   };
 
   return (
-    <div className="modalBackdrop" role="presentation">
+    <div className="modalBackdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
       <form className="scheduleDialog" onSubmit={submit} aria-label="Schedule a task">
         <div className="dialogHeader">
           <div>
@@ -4846,13 +4885,6 @@ function GoalDialog({ open, onClose, onCreate }) {
   const selectedScope = goalScopeOptions.find((option) => option.value === scope) ?? goalScopeOptions[1];
   const SelectedIcon = goalIconMap[selectedScope.iconKey];
 
-  useEffect(() => {
-    if (!open) return;
-    setError("");
-  }, [open]);
-
-  if (!open) return null;
-
   const resetForm = () => {
     setScope("Month");
     setTitle("");
@@ -4873,6 +4905,27 @@ function GoalDialog({ open, onClose, onCreate }) {
     resetForm();
     onClose();
   };
+
+  useEffect(() => {
+    if (!open) return;
+    setError("");
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") close();
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
 
   const submit = (event) => {
     event.preventDefault();
@@ -4901,7 +4954,7 @@ function GoalDialog({ open, onClose, onCreate }) {
   };
 
   return (
-    <div className="modalBackdrop" role="presentation">
+    <div className="modalBackdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
       <form className="scheduleDialog goalDialog" onSubmit={submit} aria-label="Add goal">
         <div className="dialogHeader">
           <div>
@@ -5026,7 +5079,7 @@ function LoadingScreen({ theme, isWorkspaceLoading }) {
         <div className="loadingCard">
           <div className="loadingBrand">
             <div className="loadingMark" aria-hidden="true">
-              <span>M</span>
+              <img src={markLogoIconSrc} alt="" draggable="false" />
             </div>
             <div>
               <strong>Mark</strong>
@@ -5610,7 +5663,7 @@ export function App() {
     <main className={`appShell ${theme === "dark" ? "darkTheme" : ""} ${isSidebarCollapsed ? "sidebarCollapsed" : ""}`}>
       {isSidebarCollapsed ? (
         <aside className="collapsedSidebarRail" aria-label="Collapsed sidebar">
-          <div className="brandMark compact">M</div>
+          <img className="brandMark compact brandMarkImage" src={markLogoIconSrc} alt="" draggable="false" />
           <nav className="collapsedNav" aria-label="Primary">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -5629,7 +5682,7 @@ export function App() {
             })}
           </nav>
           <IconButton label="Show sidebar" className="sidebarRevealButton" onClick={() => setIsSidebarCollapsed(false)}>
-            <ChevronRight size={20} />
+            <PanelLeftOpen size={19} />
           </IconButton>
         </aside>
       ) : (

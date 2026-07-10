@@ -8597,3 +8597,1384 @@ html[data-theme="dark"] body {
     transform: none;
   }
 }
+
+/* TDI task-first style layer
+   Source: skill(TDI).md only. */
+:root {
+  --color-brand: #2563eb;
+  --color-brand-hover: #1d4ed8;
+  --color-brand-soft: #eff6ff;
+  --color-bg-canvas: #ffffff;
+  --color-bg-sidebar: #f7f7f5;
+  --color-bg-subtle: #f4f4f2;
+  --color-bg-elevated: #ffffff;
+  --color-bg-hover: rgba(31, 35, 38, 0.055);
+  --color-bg-active: rgba(37, 99, 235, 0.1);
+  --color-text-primary: #202020;
+  --color-text-secondary: #666663;
+  --color-text-tertiary: #8a8a86;
+  --color-text-inverse: #ffffff;
+  --color-border-subtle: #e9e9e6;
+  --color-border-default: #ddddda;
+  --color-border-strong: #c8c8c3;
+  --color-success: #16803a;
+  --color-warning: #b45309;
+  --color-danger: #dc2626;
+  --priority-1: #dc2626;
+  --priority-2: #f97316;
+  --priority-3: #2563eb;
+  --priority-4: #a3a3a3;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg-tdi: 10px;
+  --radius-xl: 14px;
+  --shadow-popover: 0 8px 30px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-dialog: 0 24px 80px rgba(0, 0, 0, 0.22);
+  --duration-fast: 90ms;
+  --duration-normal: 160ms;
+  --duration-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bg: var(--color-bg-canvas);
+  --surface: var(--color-bg-elevated);
+  --surface-soft: var(--color-bg-subtle);
+  --surface-blue: var(--color-brand-soft);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --faint: var(--color-text-tertiary);
+  --border: var(--color-border-subtle);
+  --border-strong: var(--color-border-default);
+  --blue: var(--color-brand);
+  --blue-2: var(--color-brand-hover);
+  --green: var(--color-success);
+  --amber: var(--color-warning);
+  --red: var(--color-danger);
+  --shadow: none;
+  --radius: var(--radius-md);
+  --radius-lg: var(--radius-lg-tdi);
+  --sidebar: 280px;
+}
+
+html[data-theme="dark"] {
+  --color-bg-canvas: #1f1f1f;
+  --color-bg-sidebar: #191919;
+  --color-bg-subtle: #292929;
+  --color-bg-elevated: #2b2b2b;
+  --color-bg-hover: rgba(255, 255, 255, 0.07);
+  --color-bg-active: rgba(96, 165, 250, 0.16);
+  --color-text-primary: #f2f2f0;
+  --color-text-secondary: #b8b8b2;
+  --color-text-tertiary: #8f8f89;
+  --color-border-subtle: #30302f;
+  --color-border-default: #3c3c39;
+  --color-border-strong: #50504c;
+}
+
+.appShell.darkTheme {
+  --bg: var(--color-bg-canvas);
+  --surface: var(--color-bg-elevated);
+  --surface-soft: var(--color-bg-subtle);
+  --surface-blue: rgba(96, 165, 250, 0.16);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --faint: var(--color-text-tertiary);
+  --border: var(--color-border-subtle);
+  --border-strong: var(--color-border-default);
+  --blue: #60a5fa;
+  --blue-2: #93c5fd;
+  --shadow: none;
+}
+
+body {
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+.appShell {
+  grid-template-columns: var(--sidebar) minmax(0, 1fr);
+  background: var(--color-bg-canvas);
+}
+
+.appShell.sidebarCollapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.sidebar,
+.collapsedSidebarRail {
+  border-color: var(--color-border-subtle);
+  background: var(--color-bg-sidebar);
+  box-shadow: none;
+}
+
+.sidebar {
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.sidebarHeader {
+  position: relative;
+  min-height: 34px;
+}
+
+.sidebarCollapseButton {
+  width: 32px;
+  height: 32px;
+  border-color: transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  box-shadow: none;
+  opacity: 0.72;
+  transform: none;
+  transition:
+    opacity var(--duration-normal) var(--ease-standard),
+    background var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    color var(--duration-normal) var(--ease-standard);
+}
+
+.sidebarCollapseButton:hover,
+.sidebarCollapseButton:focus-visible {
+  border-color: transparent;
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  opacity: 1;
+}
+
+.collapsedSidebarRail {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  padding: var(--space-4) var(--space-2);
+}
+
+.collapsedSidebarRail .brandMark.compact {
+  order: 0;
+}
+
+.collapsedSidebarRail .collapsedNav {
+  order: 2;
+}
+
+.collapsedSidebarRail .sidebarRevealButton {
+  position: static;
+  order: 1;
+  width: 34px;
+  height: 34px;
+  border-color: transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  box-shadow: none;
+  opacity: 0.72;
+  pointer-events: auto;
+  transform: none;
+}
+
+.collapsedSidebarRail .sidebarRevealButton:hover,
+.collapsedSidebarRail .sidebarRevealButton:focus-visible {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  opacity: 1;
+}
+
+.brand {
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: var(--color-text-inverse);
+  font-size: 15px;
+}
+
+.collapsedSidebarRail .brandMark.compact {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+}
+
+.navList {
+  gap: var(--space-1);
+}
+
+.navList button,
+.collapsedNav button {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 450;
+  transition:
+    background var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    color var(--duration-normal) var(--ease-standard);
+}
+
+.navList button svg,
+.collapsedNav button svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.9;
+}
+
+.navList button:hover,
+.collapsedNav button:hover {
+  border-color: transparent;
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.navList button.active,
+.collapsedNav button.active {
+  border-color: transparent;
+  background: var(--color-bg-active);
+  color: var(--color-brand);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.sideSection {
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top-color: var(--color-border-subtle);
+}
+
+.sectionHeading {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
+.profileCard,
+.profileButton,
+.dateButton,
+.stepper,
+.viewSwitch,
+.searchField,
+.iconButton,
+.secondaryButton,
+.quietButton,
+.filterTabs button,
+.calendarOptions button,
+.habitScheduleButton,
+.focusPresetGrid button,
+.goalTypeGrid button,
+.energySelector button {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.profileCard {
+  border-color: var(--color-border-subtle);
+  background: transparent;
+}
+
+.mainSurface {
+  padding: var(--space-6) var(--space-8);
+  background: var(--color-bg-canvas);
+}
+
+.mainSurface.calendarMode {
+  padding: var(--space-4);
+}
+
+.topbar {
+  min-height: 52px;
+  margin-bottom: var(--space-4);
+}
+
+.topbar h1,
+.calendarTitleBlock h1 {
+  color: var(--color-text-primary);
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 700;
+}
+
+.topbar p,
+.calendarTitleBlock p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.primaryButton,
+.authSubmit {
+  min-height: 36px;
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: var(--color-text-inverse);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.primaryButton:hover,
+.authSubmit:hover {
+  background: var(--color-brand-hover);
+}
+
+.dashboardPanel,
+.analyticsStrip,
+.plannerBoard,
+.timelinePanel,
+.taskColumn,
+.taskDetails,
+.weeklyGlance,
+.productLoopPanel,
+.goalsGrid,
+.railPanel,
+.calendarToolbar,
+.calendarBoard,
+.taskCommandHero,
+.taskHubMain,
+.taskHubSide,
+.goalCardLarge,
+.chartPanel,
+.focusConsole,
+.checkInComposer,
+.pageHero,
+.calendarWeekStrip {
+  border-color: var(--color-border-subtle);
+  border-radius: var(--radius-lg-tdi);
+  background: var(--color-bg-elevated);
+  box-shadow: none;
+}
+
+.analyticsStrip {
+  border-radius: var(--radius-lg-tdi);
+}
+
+.metricCard {
+  min-height: 104px;
+  padding: var(--space-4);
+}
+
+.metricCard p,
+.weeklyGlance p,
+.panelHeader span,
+.viewStat p,
+.taskStageCard small,
+.goalScopeStat p,
+.taskRow small,
+.agendaMain span,
+.emptyLine {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.metricCard strong,
+.viewStat strong,
+.taskStageCard strong,
+.goalScopeStat strong,
+.taskRow strong,
+.agendaMain strong,
+.panelHeader h2,
+.weeklyGlance h2 {
+  color: var(--color-text-primary);
+}
+
+.metricCard strong {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.pageHero,
+.taskCommandHero {
+  padding: var(--space-4);
+  background: var(--color-bg-elevated);
+}
+
+.pageHero h2,
+.taskCommandHero h2,
+.dashboardPanel .panelHeader h2 {
+  color: var(--color-text-primary);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.pageHero p,
+.taskCommandHero p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.taskRow,
+.taskAgendaRow {
+  min-height: 48px;
+  border-color: var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
+}
+
+.taskRow:hover,
+.taskRow.selected,
+.taskAgendaRow:hover,
+.taskAgendaRow.selected {
+  border-color: transparent;
+  background: var(--color-bg-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+.taskRow strong,
+.agendaMain strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.taskStageCard,
+.viewStat,
+.goalScopeStat,
+.goalMetaGrid div,
+.checkInPreview,
+.checkInTimeline article,
+.notificationList article,
+.popoverList button,
+.profilePopoverHeader,
+.profileThemeToggle,
+.taskListEmpty,
+.calendarWeekStrip button,
+.focusPresetGrid button,
+.focusTimeTarget > div,
+.energySelector button,
+.goalTypeGrid button {
+  border-color: var(--color-border-subtle);
+  border-radius: var(--radius-lg-tdi);
+  background: var(--color-bg-elevated);
+  box-shadow: none;
+}
+
+.taskStageCard:hover,
+.viewStat:hover,
+.calendarWeekStrip button:hover,
+.focusPresetGrid button:hover,
+.goalTypeGrid button:hover,
+.energySelector button:hover {
+  background: var(--color-bg-hover);
+}
+
+.taskCheck,
+.agendaToggle,
+.habitDay {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-canvas);
+}
+
+.taskCheck.done,
+.agendaToggle.done,
+.habitDay.done {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.priority.high {
+  color: var(--priority-1);
+}
+
+.priority.medium {
+  color: var(--priority-2);
+}
+
+.priority.low {
+  color: var(--priority-4);
+}
+
+.calendarToolbar,
+.calendarBoard {
+  border-radius: var(--radius-lg-tdi);
+}
+
+.calendarDayLane {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc(100% / 13)
+    ),
+    var(--color-bg-canvas);
+}
+
+.calendarDayLane.today {
+  background:
+    linear-gradient(180deg, var(--color-bg-active), transparent),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc(100% / 13)
+    ),
+    var(--color-bg-canvas);
+}
+
+.calendarBlock {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.topbarPopover,
+.profilePopover,
+.markSelectMenu {
+  border-color: var(--color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-popover);
+}
+
+.scheduleDialog,
+.goalDialog {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-dialog);
+}
+
+.markSelectTrigger,
+.markSelectOption,
+input,
+select,
+textarea {
+  border-radius: var(--radius-md);
+}
+
+.loadingShell {
+  background: var(--color-bg-canvas);
+}
+
+.loadingCard {
+  border-color: var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-elevated);
+  box-shadow: none;
+}
+
+.loadingTrace {
+  background: var(--color-bg-subtle);
+}
+
+.loadingTrace span {
+  background: var(--color-brand);
+  box-shadow: none;
+}
+
+.appShell.darkTheme,
+html[data-theme="dark"] body {
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+.darkTheme :is(.sidebar, .collapsedSidebarRail, .mainSurface, .dashboardPanel, .analyticsStrip, .plannerBoard, .timelinePanel, .taskColumn, .taskDetails, .weeklyGlance, .productLoopPanel, .goalsGrid, .railPanel, .calendarToolbar, .calendarBoard, .taskCommandHero, .taskHubMain, .taskHubSide, .goalCardLarge, .chartPanel, .focusConsole, .checkInComposer, .topbarPopover, .pageHero, .calendarWeekStrip) {
+  border-color: var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+.darkTheme :is(.navList button:hover, .collapsedNav button:hover, .taskRow:hover, .taskRow.selected, .taskAgendaRow:hover, .taskAgendaRow.selected) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.darkTheme :is(.navList button.active, .collapsedNav button.active) {
+  background: var(--color-bg-active);
+  color: #93c5fd;
+}
+
+.darkTheme .calendarDayLane {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc((100% / 13) - 1px),
+      var(--color-border-subtle) calc(100% / 13)
+    ),
+    var(--color-bg-canvas);
+}
+
+/* Light, navigation-inspired typography pass. */
+:root {
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --type-text: #202124;
+  --type-muted: #5f6368;
+  --type-soft: #6f7378;
+  --type-faint: #8b9096;
+  --type-active: #0b5cff;
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.appShell {
+  color: var(--type-text);
+  font-weight: 400;
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.navList {
+  gap: 6px;
+}
+
+.navList button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--type-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.navList button svg {
+  color: currentColor;
+  stroke-width: 1.75;
+}
+
+.navList button.active {
+  background: #e8f0ff;
+  color: var(--type-active);
+  font-weight: 450;
+}
+
+.navList button:hover {
+  color: var(--type-text);
+}
+
+.sectionHeading,
+.sideSection > small,
+.taskColumn .panelHeader h2,
+.productLoopPanel .panelHeader span,
+.taskStageCard strong,
+.calendarAllDay > span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sectionHeading {
+  color: var(--type-faint);
+  font-size: 12px;
+  font-weight: 450;
+}
+
+.topbar h1,
+.calendarTitleBlock h1,
+.pageHero h2,
+.taskCommandHero h2,
+.dashboardPanel .panelHeader h2,
+.focusConsole h2,
+.checkInComposer h2,
+.dialogHeader h2 {
+  color: var(--type-text);
+  font-weight: 650;
+  letter-spacing: -0.012em;
+}
+
+.topbar p,
+.calendarTitleBlock p,
+.pageHero p,
+.taskCommandHero p,
+.dialogHeader p,
+.emptyLine,
+.popoverEmpty {
+  color: var(--type-soft);
+  font-weight: 400;
+}
+
+.panelHeader h2,
+.panelHeader strong,
+.weeklyGlance h2,
+.chartPanel .panelHeader > strong,
+.goalCardTop h2,
+.detailTop h2,
+.notes h3 {
+  color: var(--type-text);
+  font-weight: 600;
+  letter-spacing: -0.006em;
+}
+
+.panelHeader span,
+.metricCard p,
+.weeklyGlance p,
+.viewStat p,
+.viewStat small,
+.taskStageCard small,
+.taskStageCard em,
+.goalScopeStat p,
+.goalCardTop p,
+.analyticsInsight p,
+.chartPanel p,
+.taskRow small,
+.agendaMain span,
+.habitName small,
+.calendarWeekStrip small,
+.calendarWeekStrip em,
+.detailTop + dl dt,
+.taskDetails dt,
+.notes p,
+.checkInTimeline p,
+.checkInTimeline small {
+  color: var(--type-soft);
+  font-weight: 400;
+}
+
+.metricCard strong,
+.viewStat strong,
+.goalScopeStat strong,
+.goalMetaGrid dd,
+.analyticsInsight strong,
+.focusConsoleTimer,
+.checkInPreview p,
+.checkInTimeline strong,
+.taskDetails dd,
+.calendarSelectionBar strong,
+.calendarWeekStrip b {
+  color: var(--type-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.taskRow strong,
+.agendaMain strong,
+.habitName strong,
+.calendarEvent strong,
+.calendarBlock strong,
+.calendarAllDay button {
+  color: var(--type-text);
+  font-weight: 450;
+  letter-spacing: 0;
+}
+
+.primaryButton,
+.authSubmit,
+.secondaryButton,
+.quietButton,
+.dateButton,
+.stepper,
+.viewSwitch button,
+.filterTabs button,
+.calendarOptions button,
+.dayControls > button,
+.habitScheduleButton,
+.focusPresetGrid button,
+.goalTypeGrid button,
+.energySelector button,
+.profileButton,
+.profileMenuList button,
+.profileMenuFooter button,
+.popoverList button,
+.notificationList article,
+.markSelectTrigger,
+.markSelectOption,
+input,
+select,
+textarea {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.primaryButton,
+.authSubmit,
+.viewSwitch button.active,
+.filterTabs button.active,
+.calendarOptions button.active,
+.focusPresetGrid button.active,
+.goalTypeGrid button.active {
+  font-weight: 500;
+}
+
+.calendarBoardHeader button span,
+.calendarTimeLabels span,
+.calendarTimezone,
+.calendarEvent span,
+.calendarEvent small,
+.calendarBlock span,
+.calendarAllDay span {
+  font-weight: 400;
+}
+
+.darkTheme {
+  --type-text: #f4f4f2;
+  --type-muted: #b5b8bd;
+  --type-soft: #9aa0a8;
+  --type-faint: #757b84;
+  --type-active: #8ab4ff;
+}
+
+.darkTheme .navList button.active {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--type-active);
+}
+
+.darkTheme :is(.topbar h1, .calendarTitleBlock h1, .pageHero h2, .taskCommandHero h2, .dashboardPanel .panelHeader h2, .focusConsole h2, .checkInComposer h2, .dialogHeader h2) {
+  color: var(--type-text);
+  font-weight: 650;
+  letter-spacing: -0.012em;
+}
+
+.darkTheme :is(.topbar p, .calendarTitleBlock p, .pageHero p, .taskCommandHero p, .dialogHeader p, .emptyLine, .popoverEmpty, .panelHeader span, .metricCard p, .weeklyGlance p, .viewStat p, .viewStat small, .taskStageCard small, .taskStageCard em, .goalScopeStat p, .goalCardTop p, .analyticsInsight p, .chartPanel p, .taskRow small, .agendaMain span, .habitName small, .calendarWeekStrip small, .calendarWeekStrip em, .detailTop + dl dt, .taskDetails dt, .notes p, .checkInTimeline p, .checkInTimeline small) {
+  color: var(--type-soft);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.darkTheme :is(.panelHeader h2, .panelHeader strong, .weeklyGlance h2, .chartPanel .panelHeader > strong, .goalCardTop h2, .detailTop h2, .notes h3, .metricCard strong, .viewStat strong, .goalScopeStat strong, .goalMetaGrid dd, .analyticsInsight strong, .focusConsoleTimer, .checkInPreview p, .checkInTimeline strong, .taskDetails dd, .calendarSelectionBar strong, .calendarWeekStrip b) {
+  color: var(--type-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.darkTheme :is(.taskRow strong, .agendaMain strong, .habitName strong, .calendarEvent strong, .calendarBlock strong, .calendarAllDay button) {
+  color: var(--type-text);
+  font-weight: 450;
+  letter-spacing: 0;
+}
+
+.darkTheme :is(.primaryButton, .authSubmit, .secondaryButton, .quietButton, .dateButton, .stepper, .viewSwitch button, .filterTabs button, .calendarOptions button, .dayControls > button, .habitScheduleButton, .focusPresetGrid button, .goalTypeGrid button, .energySelector button, .profileButton, .profileMenuList button, .profileMenuFooter button, .popoverList button, .notificationList article, .markSelectTrigger, .markSelectOption, input, select, textarea) {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Profile trigger: keep the avatar crisp without a heavy outer bubble. */
+.profileMenuSlot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.profileButton {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--type-text);
+  box-shadow: none;
+}
+
+.profileButton:hover,
+.profileButton:focus-visible,
+.profileButton[aria-expanded="true"] {
+  border-color: transparent;
+  background: var(--color-bg-hover);
+  box-shadow: none;
+}
+
+.profileButton .profileAvatar {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, #2f6df6, #155eef);
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.profileButton .profileAvatar.hasImage {
+  background: var(--color-bg-elevated);
+}
+
+.profileButton .profileAvatarButton {
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.darkTheme .profileButton {
+  border-color: transparent;
+  background: transparent;
+  color: var(--type-text);
+}
+
+.darkTheme .profileButton:hover,
+.darkTheme .profileButton:focus-visible,
+.darkTheme .profileButton[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: none;
+}
+
+.darkTheme .profileButton .profileAvatar {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.22);
+}
+
+.darkTheme .profileButton .profileAvatar.hasImage {
+  background: var(--color-bg-elevated);
+}
+
+/* Comfortable dark mode: softer contrast, less glow, calmer surfaces. */
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: #111214;
+  color: #e9e7e1;
+}
+
+html[data-theme="dark"] {
+  --color-bg-canvas: #111214;
+  --color-bg-sidebar: #151618;
+  --color-bg-subtle: #1b1d20;
+  --color-bg-elevated: #181a1d;
+  --color-bg-hover: rgba(238, 234, 222, 0.055);
+  --color-bg-active: rgba(122, 167, 247, 0.14);
+  --color-text-primary: #e9e7e1;
+  --color-text-secondary: #a7a39a;
+  --color-text-tertiary: #78756f;
+  --color-border-subtle: rgba(238, 234, 222, 0.075);
+  --color-border-default: rgba(238, 234, 222, 0.11);
+  --color-border-strong: rgba(238, 234, 222, 0.18);
+}
+
+.appShell.darkTheme {
+  --bg: #111214;
+  --surface: #181a1d;
+  --surface-soft: #1b1d20;
+  --surface-blue: rgba(122, 167, 247, 0.12);
+  --surface-raised: #1e2024;
+  --surface-inset: #131416;
+  --text: #e9e7e1;
+  --muted: #a7a39a;
+  --faint: #78756f;
+  --border: rgba(238, 234, 222, 0.085);
+  --border-strong: rgba(238, 234, 222, 0.16);
+  --blue: #7aa7f7;
+  --blue-2: #9bbcf8;
+  --green: #72d7a1;
+  --amber: #e8c47b;
+  --violet: #b9a7f2;
+  --orange: #e9a47b;
+  --red: #ee8b96;
+  --slate: #9a9993;
+  --donut-empty: #25272b;
+  --donut-meeting: #858987;
+  --donut-breaks: #303238;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  --type-text: #e9e7e1;
+  --type-muted: #b6b2a9;
+  --type-soft: #9f9b92;
+  --type-faint: #76736d;
+  --type-active: #9bbcf8;
+  background: #111214;
+}
+
+.darkTheme .mainSurface,
+.darkTheme .mainSurface.calendarMode {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 260px),
+    var(--bg);
+}
+
+.darkTheme .sidebar,
+.darkTheme .collapsedSidebarRail {
+  border-color: var(--border);
+  background: var(--color-bg-sidebar);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.018);
+}
+
+.darkTheme .brand {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.darkTheme .brandMark,
+.darkTheme .brandMark.compact {
+  border-color: rgba(122, 167, 247, 0.24);
+  background: linear-gradient(180deg, #2b63d9, #1f4fc0);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.darkTheme .brandMark::after {
+  display: none;
+}
+
+.darkTheme :is(.dashboardPanel, .analyticsStrip, .plannerBoard, .timelinePanel, .taskColumn, .taskDetails, .weeklyGlance, .productLoopPanel, .goalsGrid, .railPanel, .calendarToolbar, .calendarBoard, .taskCommandHero, .taskHubMain, .taskHubSide, .goalCardLarge, .chartPanel, .focusConsole, .checkInComposer, .scheduleDialog, .goalDialog, .topbarPopover, .profilePopover, .pageHero, .calendarWeekStrip, .loadingCard) {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.darkTheme :is(.viewStat, .taskStageCard, .goalScopeStat, .productLoopGrid article, .taskRow, .taskAgendaRow, .agendaTime, .goalMetaGrid div, .checkInPreview, .checkInTimeline article, .calendarWeekStrip button, .focusPresetGrid button, .focusTimeTarget > div, .energySelector button, .goalTypeGrid button, .goalCadenceCallout, .notificationList article, .popoverList button, .profilePopoverHeader, .profileThemeToggle, .taskListEmpty, .profileActionPanel, .profileAvatarEditor, .profilePlanMeter, .profileInfoLine, .profileShortcutList div) {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.darkTheme :is(.dateButton, .stepper, .viewSwitch, .iconButton, .profileButton, .searchField, .calendarOptions button, .calendarOptions span, .calendarOptions strong, .filterTabs, .dayControls > button, .quietButton, .secondaryButton, .habitScheduleButton, input, select, textarea, .scheduleDialog input, .scheduleDialog select, .scheduleDialog textarea, .checkInComposer input, .checkInComposer select, .checkInComposer textarea, .profileField input, .profileShortcutList kbd, .profilePanelActions button, .profileAvatarActions button, .profileWideAction, .profileThemeGrid button, .profileModeGrid button, .profilePlanGrid span, .profileSwitch, .markSelectTrigger, .markSelectOption) {
+  border-color: var(--border);
+  background: var(--surface-inset);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.darkTheme :is(.iconButton:hover, .dateButton:hover, .profileButton:hover, .profileButton[aria-expanded="true"], .popoverList button:hover, .profileMenuList button:hover, .profileMenuFooter button:hover, .quietButton:hover, .secondaryButton:hover, .habitScheduleButton:hover, .filterTabs button:hover, .calendarOptions button:hover, .dayControls > button:hover, .energySelector button:hover, .focusPresetGrid button:hover, .goalTypeGrid button:hover, .taskRow:hover, .taskRow.selected, .taskAgendaRow:hover, .taskAgendaRow.selected, .profilePanelActions button:hover, .profileAvatarActions button:hover:not(:disabled), .profileWideAction:hover, .profileThemeGrid button:hover, .profileThemeGrid button.active, .profileModeGrid button:hover, .profileModeGrid button.active) {
+  border-color: rgba(238, 234, 222, 0.15);
+  background: #202227;
+  color: var(--text);
+  box-shadow: none;
+}
+
+.darkTheme :is(.navList button, .collapsedNav button) {
+  color: var(--type-soft);
+}
+
+.darkTheme :is(.navList button:hover, .collapsedNav button:hover) {
+  background: rgba(238, 234, 222, 0.055);
+  color: var(--type-text);
+}
+
+.darkTheme :is(.navList button.active, .collapsedNav button.active, .filterTabs button.active, .viewSwitch button.active, .calendarOptions button.active, .focusPresetGrid button.active, .goalTypeGrid button.active, .profileMenuList button.active, .profileMenuList button.active:hover) {
+  border-color: rgba(122, 167, 247, 0.22);
+  background: rgba(122, 167, 247, 0.14);
+  color: var(--type-active);
+  box-shadow: none;
+}
+
+.darkTheme :is(.topbar h1, .calendarTitleBlock h1, .pageHero h2, .taskCommandHero h2, .dashboardPanel .panelHeader h2, .focusConsole h2, .checkInComposer h2, .dialogHeader h2, .panelHeader h2, .panelHeader strong, .weeklyGlance h2, .chartPanel .panelHeader > strong, .goalCardTop h2, .detailTop h2, .notes h3, .metricCard strong, .viewStat strong, .goalScopeStat strong, .goalMetaGrid dd, .analyticsInsight strong, .focusConsoleTimer, .checkInPreview p, .checkInTimeline strong, .taskDetails dd, .calendarSelectionBar strong, .calendarWeekStrip b, .taskRow strong, .agendaMain strong, .habitName strong, .calendarEvent strong, .calendarBlock strong, .calendarAllDay button) {
+  color: var(--type-text);
+}
+
+.darkTheme :is(.topbar p, .calendarTitleBlock p, .pageHero p, .taskCommandHero p, .dialogHeader p, .emptyLine, .popoverEmpty, .panelHeader span, .metricCard p, .weeklyGlance p, .viewStat p, .viewStat small, .taskStageCard small, .taskStageCard em, .goalScopeStat p, .goalCardTop p, .analyticsInsight p, .chartPanel p, .taskRow small, .agendaMain span, .habitName small, .calendarWeekStrip small, .calendarWeekStrip em, .detailTop + dl dt, .taskDetails dt, .notes p, .checkInTimeline p, .checkInTimeline small, .sectionHeading, .eyebrow, .checkInComposer label, .energySelector legend, .scheduleDialog label, .focusTimeTarget label) {
+  color: var(--type-soft);
+}
+
+.darkTheme .calendarBoardHeader,
+.darkTheme .calendarAllDay,
+.darkTheme .calendarSelectionBar {
+  border-color: var(--border);
+  background: #15171a;
+}
+
+.darkTheme .calendarDayLane {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      rgba(238, 234, 222, 0.055) calc((100% / 13) - 1px),
+      rgba(238, 234, 222, 0.055) calc(100% / 13)
+    ),
+    #121417;
+}
+
+.darkTheme .calendarDayLane.today {
+  background:
+    linear-gradient(180deg, rgba(122, 167, 247, 0.075), transparent),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((100% / 13) - 1px),
+      rgba(238, 234, 222, 0.055) calc((100% / 13) - 1px),
+      rgba(238, 234, 222, 0.055) calc(100% / 13)
+    ),
+    #121417;
+}
+
+.darkTheme :is(.calendarEvent, .calendarAllDay button, .calendarBlock) {
+  box-shadow: none;
+}
+
+.darkTheme :is(.calendarEvent, .calendarBlock) {
+  background: rgba(122, 167, 247, 0.13);
+  border-color: rgba(122, 167, 247, 0.24);
+}
+
+.darkTheme :is(.calendarEvent.amber, .calendarBlock.amber) {
+  background: rgba(232, 196, 123, 0.14);
+  border-color: rgba(232, 196, 123, 0.25);
+}
+
+.darkTheme :is(.calendarEvent.violet, .calendarBlock.violet) {
+  background: rgba(185, 167, 242, 0.14);
+  border-color: rgba(185, 167, 242, 0.25);
+}
+
+.darkTheme :is(.calendarEvent.green, .calendarBlock.green) {
+  background: rgba(114, 215, 161, 0.13);
+  border-color: rgba(114, 215, 161, 0.24);
+}
+
+.darkTheme :is(.calendarEvent.slate, .calendarBlock.slate) {
+  background: rgba(154, 153, 147, 0.13);
+  border-color: rgba(154, 153, 147, 0.23);
+}
+
+.darkTheme .calendarNowLine,
+.darkTheme .calendarNowLine::before {
+  background: rgba(238, 139, 150, 0.9);
+}
+
+.darkTheme .profileButton:hover,
+.darkTheme .profileButton:focus-visible,
+.darkTheme .profileButton[aria-expanded="true"] {
+  background: rgba(238, 234, 222, 0.055);
+}
+
+.darkTheme .profileButton .profileAvatar {
+  border-color: rgba(238, 234, 222, 0.16);
+  background: linear-gradient(180deg, #2b63d9, #1f4fc0);
+  box-shadow: 0 0 0 1px rgba(122, 167, 247, 0.16);
+}
+
+.darkTheme .profileAvatar {
+  box-shadow: none;
+}
+
+.darkTheme .primaryButton,
+.darkTheme .authSubmit,
+.darkTheme .calendarDropGuide span {
+  border-color: rgba(122, 167, 247, 0.38);
+  background: #2f6df6;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.darkTheme :is(.primaryButton:hover, .authSubmit:hover) {
+  background: #3a77f6;
+}
+
+/* Mark logo assets. */
+.brand {
+  min-width: 0;
+}
+
+.brandLogo {
+  display: block;
+  width: 126px;
+  height: 46px;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 7px 14px rgba(37, 99, 235, 0.12));
+  user-select: none;
+}
+
+.webHeader .brandLogo,
+.authBrand .brandLogo {
+  width: 132px;
+  height: 48px;
+}
+
+.sidebar .brandLogo {
+  width: 122px;
+  height: 44px;
+}
+
+.brandLogoDark {
+  display: none;
+}
+
+.brandMarkImage,
+.collapsedSidebarRail .brandMark.compact.brandMarkImage,
+.darkTheme .brandMarkImage,
+.darkTheme .brandMark.compact.brandMarkImage {
+  display: block;
+  width: 30px;
+  height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 7px 14px rgba(37, 99, 235, 0.16));
+  object-fit: contain;
+  user-select: none;
+}
+
+.brandMarkImage::after,
+.darkTheme .brandMarkImage::after {
+  display: none;
+}
+
+.loadingMark {
+  width: 58px;
+  height: 58px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.loadingMark img {
+  display: block;
+  width: 44px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(37, 99, 235, 0.18));
+}
+
+.darkTheme .loadingMark {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.darkTheme .brandLogoLight {
+  display: none;
+}
+
+.darkTheme .brandLogoDark {
+  display: block;
+}
+
+.darkTheme .brandLogo,
+.darkTheme .brandMarkImage,
+.darkTheme .loadingMark img {
+  filter: drop-shadow(0 8px 18px rgba(47, 109, 246, 0.22));
+}
+
+@media (max-width: 960px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .appShell.sidebarCollapsed {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: relative;
+    height: auto;
+    grid-template-rows: auto auto auto;
+    padding: var(--space-4);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .navList {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mainSurface {
+    padding: var(--space-5);
+  }
+
+  .mainSurface.calendarMode {
+    height: auto;
+    padding: var(--space-3);
+    overflow: auto;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbarActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .navList {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+    scrollbar-width: none;
+  }
+
+  .navList::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navList button {
+    width: auto;
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 0 var(--space-3);
+    white-space: nowrap;
+  }
+
+  .plannerBoard,
+  .plannerBoard.plannerBoardEmpty {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .taskColumn,
+  .timelinePanel,
+  .taskDetails {
+    border-radius: 0;
+  }
+
+  .timelinePanel {
+    margin: 0;
+    transform: none;
+  }
+
+  .timelineHeader {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .dayControls,
+  .viewSwitch {
+    width: 100%;
+  }
+
+  .dayControls > button,
+  .viewSwitch button {
+    flex: 1;
+  }
+
+  .mainSurface {
+    padding: var(--space-4);
+  }
+
+  .topbar h1,
+  .calendarTitleBlock h1 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .primaryButton {
+    min-width: 0;
+  }
+}
